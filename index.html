@@ -1,0 +1,4154 @@
+<!doctype html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vidlo</title>
+  <link rel="icon" href="/698df818-6d92-4780-9dfc-d0ce7783889c.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/698df818-6d92-4780-9dfc-d0ce7783889c.png" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = { darkMode: "class", theme: { extend: {} } };
+  </script>
+  <style>
+    body { background:#0A0A0A; color:#e5e2e1; font-family: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; min-height:100dvh }
+    /* Lock page-level horizontal scrolling while still allowing vertical page scroll.
+       Allow horizontal scrolling inside rows/carousels so rows remain swipe/scrollable. */
+    .home-no-scroll {
+      /* allow vertical scroll but prevent horizontal overflow at the page level */
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      height: 100dvh !important;
+      /* allow vertical pan at page level */
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Ensure rows and carousels remain horizontally scrollable and respond to touch swipes */
+    .home-no-scroll .scroll-row,
+    .home-no-scroll .hide-scrollbar,
+    .home-no-scroll .row-container > .flex {
+      /* enable horizontal scrolling inside rows */
+      overflow-x: auto !important;
+      /* preserve native scroll snapping where used */
+      scroll-snap-type: x mandatory !important;
+      /* allow both horizontal row swipes and vertical page pans when the user drags on a row */
+      touch-action: pan-x pan-y !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+    .hide-scrollbar::-webkit-scrollbar{display:none} .hide-scrollbar{ -ms-overflow-style:none; scrollbar-width:none }
+    /* overlay styles */
+    .vid-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:80; display:flex; align-items:center; justify-content:center; padding:1rem; transition: background .12s ease }
+    /* default framed player for inline previews */
+    /* responsive framed player: use aspect-ratio and clamp by viewport height so the player is always fully visible */
+    .vid-frame{
+      width:100%;
+      max-width:1200px;
+      aspect-ratio:16/9;
+      height:auto;
+      max-height:calc(100vh - 48px); /* leave room for UI chrome */
+      background:#000;
+      border-radius:8px;
+      overflow:hidden;
+      position:relative;
+      box-shadow:0 18px 60px rgba(0,0,0,0.6);
+      display:flex;
+      align-items:stretch;
+    }
+    /* full-screen modifier: cover the entire viewport and remove rounded corners */
+    .vid-overlay.fullscreen{ align-items:stretch; justify-content:stretch; padding:0; background:rgba(0,0,0,0.98) }
+    .vid-overlay.fullscreen .vid-frame{ width:100%; height:100%; max-width:none; max-height:none; border-radius:0; box-shadow:none; }
+    .close-btn{ position:absolute; left:36px; right:auto; top:26px; z-index:10 }
+
+    /* Ensure hero carousel dots render as true circles (override global button padding & min-size) */
+    .hero-dot{
+      display: inline-block;
+      width: 10px !important;
+      height: 10px !important;
+      min-width: 10px !important;
+      min-height: 10px !important;
+      padding: 0 !important;
+      margin: 0 4px !important;
+      border-radius: 50% !important;
+      background-color: rgba(255,255,255,0.4) !important;
+      border: none !important;
+      box-sizing: content-box !important;
+      vertical-align: middle !important;
+      line-height: 0 !important;
+      font-size: 0 !important; /* prevents inherited font metrics from stretching */
+    }
+    @media(min-width:768px){ .vid-frame{ height:50vh } }
+
+    /* Loading placeholders for rows (disabled) */
+    .row-loader { display: none !important; }
+
+    /* While JS may toggle a 'cards-loading' class to avoid flashes, show cards immediately */
+    .cards-loading .poster-card {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      transform: none !important;
+      transition: none !important;
+    }
+    .poster-card { transition: none !important; }
+
+    .row-loader .dot,
+    .row-loader .dot::after,
+    .row-loader .dot.small,
+    .loader-center {
+      display: none !important;
+    }
+
+    /* Discover loading UI hidden */
+    #discover-loading{ display: none !important; }
+    .discover-spinner{ display: none !important; }
+
+    /* keep keyframes defined but unused to avoid CSS errors in some UA */
+    @keyframes shimmer { to { transform: translateX(120%); } }
+    @keyframes spin{ to{ transform: rotate(360deg) } }
+
+    /* Tighter poster cards for Discover panel to reduce spacing */
+    #discover-main .poster-card {
+      min-width: 110px;
+      width: 140px;
+      aspect-ratio: 2 / 3;
+    }
+    /* ensure image fills the smaller card cleanly */
+    #discover-main .poster-card .poster-img {
+      object-fit: cover;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* hide desktop sidebar when auth modal is open so login/signup covers full app */
+    body.auth-open nav.fixed.left-0 {
+      display: none !important;
+    }
+    .auth-hidden {
+      display: none !important;
+    }
+
+    /* Auth modal inputs: improved sizing, spacing, contrast and focus for sign in / sign up */
+    #auth-contents .flex.items-center.gap-3 {
+      position: relative;
+    }
+    #auth-contents input,
+    #auth-contents select,
+    #auth-contents textarea {
+      background: #0A0A0A;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #e5e2e1;
+      caret-color: #e5e2e1;
+      padding: 0.9rem 1rem 0.9rem 2.8rem;
+      font-size: 15px;
+      line-height: 1.2;
+      border-radius: 12px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+      transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
+      width: 100%;
+      -webkit-appearance: none;
+    }
+    #auth-contents input::placeholder,
+    #auth-contents textarea::placeholder {
+      color: #9ca3af;
+      opacity: 1;
+      font-size: 14px;
+    }
+    #auth-contents .flex.items-center.gap-3 .material-symbols-outlined {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      pointer-events: none;
+      font-size: 20px;
+    }
+    #auth-contents input:focus,
+    #auth-contents textarea:focus,
+    #auth-contents select:focus {
+      outline: none;
+      border-color: rgba(99,102,241,0.9);
+      box-shadow: 0 6px 18px rgba(99,102,241,0.08);
+      transform: translateY(-1px);
+    }
+    #auth-contents .relative { position: relative; }
+
+    #auth-contents input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+
+    .container {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .container input {
+      display: none;
+    }
+
+    .container svg {
+      overflow: visible;
+      display: inline-block;
+      vertical-align: middle;
+      width: 20px;
+      height: 20px;
+    }
+
+    .path {
+      fill: none;
+      stroke: white;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke-dasharray 0.5s ease, stroke-dashoffset 0.5s ease;
+      stroke-dasharray: 241 9999999;
+      stroke-dashoffset: 0;
+      opacity: 0.35;
+    }
+
+    .container input:checked ~ svg .path {
+      stroke-dasharray: 70.5096664428711 9999999;
+      stroke-dashoffset: -262.2723388671875;
+      opacity: 1;
+    }
+
+    .container input:focus-visible ~ svg {
+      outline: 3px solid rgba(99,102,241,0.14);
+      outline-offset: 4px;
+      border-radius: 6px;
+    }
+
+    .switch {
+      font-size: 17px;
+      position: relative;
+      display: inline-block;
+      width: 3.5em;
+      height: 2em;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgb(182, 182, 182);
+      transition: .4s;
+      border-radius: 10px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 1.4em;
+      width: 1.4em;
+      border-radius: 8px;
+      left: 0.3em;
+      bottom: 0.3em;
+      transform: rotate(270deg);
+      background-color: rgb(255, 255, 255);
+      transition: .4s;
+    }
+    .switch input:checked + .slider {
+      background-color: #21cc4c;
+    }
+    .switch input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+    .switch input:checked + .slider:before {
+      transform: translateX(1.5em);
+    }
+
+    .custom-select {
+      position: relative;
+      display: inline-block;
+      min-width: 160px;
+      border-radius: 9999px;
+      background: transparent;
+      border: 0;
+      font-size: 15px;
+      color: var(--tw-text-opacity, #e5e2e1);
+    }
+    .custom-select .sel-btn {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      background: transparent;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #e5e2e1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .custom-select .sel-btn .label {
+      margin-right: 0;
+      white-space: nowrap;
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .custom-select .chev {
+      font-size: 18px;
+      color: rgba(229,226,225,0.8);
+      transform: translateY(0);
+      transition: transform .18s ease;
+    }
+    .custom-select.open .chev { transform: rotate(180deg); }
+    .custom-select .sel-list {
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: linear-gradient(180deg, #0F0F10, #161617);
+      border: 1px solid rgba(255,255,255,0.04);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      border-radius: 12px;
+      padding: 6px;
+      z-index: 99999;
+      min-width: 180px;
+      max-height: 45vh;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      transition: transform .12s ease, opacity .12s ease;
+      transform-origin: top right;
+      display: block;
+      pointer-events: auto;
+    }
+    .custom-select .sel-list.hidden { display: none; }
+    .custom-select .sel-list li {
+      list-style: none;
+      padding: 10px 12px;
+      cursor: pointer;
+      color: #e5e2e1;
+      border-radius: 8px;
+    }
+    .custom-select .sel-list li:hover,
+    .custom-select .sel-list li[aria-selected="true"] {
+      background: rgba(255,255,255,0.02);
+      color: #fff;
+    }
+    .custom-select .sel-list li .meta { display:block; font-size:12px; color: #9ca3af; margin-top:4px }
+
+    .blurred-unwatched img {
+      filter: blur(6px) saturate(.9);
+      transform-origin: center;
+      transition: filter .22s ease, transform .22s ease;
+    }
+    .blurred-unwatched::after{
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(10,10,10,0.28), rgba(10,10,10,0.0));
+      pointer-events: none;
+    }
+    .blurred-unwatched .unwatched-badge {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      z-index: 6;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Hide the unwatched badge when shown inside settings panels (original and desktop clone)
+       so it does not appear over the settings UI */
+    #settings-panel .unwatched-badge,
+    #settings-panel-desktop .unwatched-badge {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    .blurred-unwatched .unwatched-badge .material-symbols-outlined {
+      font-size: 14px;
+    }
+
+    /* removed mobile-specific styles and nav sizing to make this laptop-only */
+
+    /* Collapsed sidebar styles (icons-only) */
+    /* Add transitions so collapsing/expanding is animated */
+    nav.fixed.left-0 {
+      transition: width .32s cubic-bezier(.2,.9,.2,1), padding .28s ease, transform .28s ease;
+      will-change: width, padding;
+    }
+    main#app {
+      transition: margin-left .32s cubic-bezier(.2,.9,.2,1), padding-left .28s ease;
+      will-change: margin-left, padding-left;
+    }
+    #sidebar-collapse {
+      transition: left .32s cubic-bezier(.2,.9,.2,1), width .28s ease, height .28s ease, transform .32s ease, background-color .18s ease;
+      will-change: left, transform;
+    }
+
+    .collapsed-sidebar nav.fixed.left-0 {
+      width: 72px !important;
+      min-width: 72px !important;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    /* Ensure Live TV label and "Coming Soon" badge stay inline and don't wrap/overlap */
+    nav.fixed.left-0 .livetv-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+    nav.fixed.left-0 .livetv-row > * {
+      white-space: nowrap;
+    }
+    /* hide brand, footer links and app version when sidebar is collapsed */
+    .collapsed-sidebar nav.fixed.left-0 .mb-12,
+    .collapsed-sidebar nav.fixed.left-0 .mb-8,
+    .collapsed-sidebar nav.fixed.left-0 #sidebar-brand {
+      display: none !important;
+    }
+    /* hide bottom footer (Vidlo label, legal/status/features links and version) when collapsed */
+    .collapsed-sidebar nav.fixed.left-0 #sidebar-footer {
+      display: none !important;
+    }
+    /* ensure any footer anchor text is hidden in collapsed state as a fallback */
+    .collapsed-sidebar nav.fixed.left-0 #sidebar-footer a,
+    .collapsed-sidebar nav.fixed.left-0 #sidebar-footer span,
+    .collapsed-sidebar nav.fixed.left-0 #sidebar-footer .text-neutral-500 {
+      display: none !important;
+    }
+    .collapsed-sidebar nav.fixed.left-0 ul { gap: 0.25rem; }
+    .collapsed-sidebar nav.fixed.left-0 a { justify-content: center; padding-left: 0.5rem; padding-right: 0.5rem; }
+    .collapsed-sidebar nav.fixed.left-0 a .material-symbols-outlined { font-size: 20px; }
+    /* hide all text labels in collapsed state while keeping icons visible */
+    .collapsed-sidebar nav.fixed.left-0 a > span:not(.material-symbols-outlined) { display: none !important; }
+
+    /* When sidebar is collapsed make the Live TV row icon-only:
+       - center the icon, hide its text label and the "Coming Soon" badge
+       - nudge the icon slightly to the right so it visually aligns in the narrow sidebar */
+    .collapsed-sidebar nav.fixed.left-0 .livetv-row {
+      justify-content: center;
+      gap: 0;
+      padding-left: 1.2rem;
+      padding-right: 0.6rem;
+    }
+    .collapsed-sidebar nav.fixed.left-0 .livetv-row > span:not(.material-symbols-outlined),
+    .collapsed-sidebar nav.fixed.left-0 .livetv-row .ml-auto {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      max-width: 0 !important;
+      overflow: hidden !important;
+    }
+
+    /* adjust collapse button to sit on the edge when collapsed */
+    .collapsed-sidebar #sidebar-collapse { left: 72px; transform: translateX(-50%) translateY(-50%); width: 40px; height: 40px; top: 50%; }
+    /* shift main content over when sidebar collapsed */
+    .collapsed-sidebar main#app { margin-left: 72px !important; padding-left: 12px; }
+    /* ensure discover/desktop clones respect sidebar spacing */
+    .collapsed-sidebar #discover-panel-desktop,
+    .collapsed-sidebar #watchlist-panel,
+    .collapsed-sidebar #watchlist-panel-desktop,
+    .collapsed-sidebar #settings-panel-desktop,
+    .collapsed-sidebar #discover-panel { left: 72px !important; width: calc(100% - 72px) !important; }
+
+    /* --- Button improvements: consistent sizing, elevation, hover/focus states, and icon spacing --- */
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.65rem 1rem;
+      border-radius: 12px;
+      font-weight: 600;
+      color: #ffffff;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.02) inset;
+      transition: transform .12s cubic-bezier(.2,.9,.2,1), box-shadow .12s ease, background-color .12s ease, opacity .12s ease;
+      min-height: 44px;
+      line-height: 1;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Season button glow when active (selected) */
+    .season-btn {
+      transition: box-shadow .18s ease, transform .18s cubic-bezier(.2,.9,.2,1), background-color .12s ease, color .12s ease;
+      will-change: box-shadow, transform;
+      /* set a neutral transform origin for smooth lift/scale */
+      transform-origin: center;
+    }
+    /* Hover animation: subtle lift + scale with gentle shadow */
+    .season-btn:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 16px 36px rgba(59,130,246,0.12), 0 6px 14px rgba(0,0,0,0.35);
+      color: #fff;
+    }
+    /* Pressed/active state should feel tactile (slightly lower) */
+    .season-btn:active {
+      transform: translateY(-1px) scale(0.995);
+      box-shadow: 0 8px 18px rgba(59,130,246,0.10), 0 3px 8px rgba(0,0,0,0.4);
+    }
+    /* Apply visible glow / elevation when the season button is marked active (bg-blue-600 is used to indicate selection) */
+    .season-btn.bg-blue-600,
+    .season-btn[aria-pressed="true"] {
+      box-shadow: 0 12px 30px rgba(59,130,246,0.20), 0 4px 10px rgba(59,130,246,0.10);
+      transform: translateY(-2px);
+      color: #fff;
+    }
+    /* Stronger focus ring for keyboard users */
+    .season-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 14px 36px rgba(59,130,246,0.18), 0 0 0 4px rgba(59,130,246,0.10);
+      transform: translateY(-2px);
+    }
+    /* Primary / filled style */
+    button.bg-indigo-600, button[style*="background: rgb(99,102,241)"], .btn-primary {
+      background: linear-gradient(180deg, #4f46e5, #3730a3);
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 10px 30px rgba(79,70,229,0.18);
+      color: #fff;
+    }
+    button.bg-indigo-600:hover, .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 40px rgba(79,70,229,0.22);
+      opacity: 0.98;
+    }
+    button.bg-indigo-600:active, .btn-primary:active { transform: translateY(0); box-shadow: 0 6px 16px rgba(0,0,0,0.5); }
+
+    /* Ghost / outline style */
+    button.bg-transparent.border, .btn-ghost, button.bg-transparent.border-neutral-700 {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #e5e2e1;
+      box-shadow: none;
+    }
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.025);
+      transform: translateY(-1px);
+    }
+
+    /* Large CTA */
+    .btn-large {
+      padding: 0.9rem 1.25rem;
+      border-radius: 14px;
+      font-size: 1.02rem;
+    }
+
+    /* Icon-only small buttons (close, back) */
+    .close-btn, .icon-btn, .p-2 {
+      padding: 0.5rem;
+      min-width: 40px;
+      min-height: 40px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.04);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+    }
+    .close-btn:hover, .icon-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.04); }
+
+    /* Trailer / play buttons accent */
+    #play-btn, #trailer-btn {
+      border-radius: 14px;
+      gap: 0.75rem;
+    }
+    #play-btn { background: linear-gradient(90deg,#4f46e5,#6366f1); box-shadow: 0 12px 30px rgba(79,70,229,0.16); }
+    #trailer-btn { border: 1px solid rgba(255,255,255,0.06); background: transparent; color: #e5e2e1; }
+
+    /* HERO CAROUSEL CAPTION: use a stable class so layout can be adjusted responsively.
+       On small screens raise the caption (increase bottom offset) so the Play/Trailer buttons
+       don't overlap the description. Also ensure the slide backgrounds scale to fill the viewport
+       so hero images adapt to screen size. */
+    .hero-caption{
+      position:absolute;
+      left:2%;
+      bottom:8%;
+      max-width:60%;
+      color:#fff;
+      padding:18px;
+    }
+
+    /* Ensure each hero slide image fills the slide area and responds to viewport changes */
+    .hero-slide {
+      background-repeat: no-repeat !important;
+      background-size: cover !important;
+      background-position: center center !important;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    /* Make the carousel container flexible so slides always match viewport height */
+    #hero-carousel {
+      min-height: 50vh;
+      height: min(85vh, calc(100vh - 120px));
+      max-height: 92vh;
+    }
+
+    @media (max-width: 900px){
+      /* on narrower viewports lift the caption higher to avoid control overlap */
+      .hero-caption{
+        left:2%;
+        right:3%;
+        bottom:20%;
+        max-width:94%;
+        padding:14px;
+      }
+      /* ensure smaller text scales and has more available height */
+      .hero-caption h2{ font-size:clamp(16px,3.6vw,32px); line-height:1.05; margin-bottom:6px }
+      .hero-caption p{ font-size:clamp(12px,2.2vw,15px); }
+    }
+
+    /* Focus styles for keyboard users */
+    button:focus {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+      transform: translateY(-1px);
+    }
+
+    /* Ensure icons inside buttons are sized and aligned */
+    button .material-symbols-outlined {
+      font-size: 18px;
+      opacity: 0.96;
+      display: inline-flex;
+      vertical-align: middle;
+      line-height: 1;
+    }
+
+    /* Ensure Live TV icon matches other sidebar icons */
+    #sidebar-livetv .material-symbols-outlined {
+      font-size: 18px;
+      opacity: 0.96;
+      display: inline-flex;
+      vertical-align: middle;
+      line-height: 1;
+    }
+
+    /* Restore normal size for action icons in the details modal (like, dislike, watchlist, share) */
+    #like-btn .material-symbols-outlined,
+    #dislike-btn .material-symbols-outlined,
+    #watchlist-btn .material-symbols-outlined,
+    #share-btn .material-symbols-outlined {
+      font-size: 24px;
+      opacity: 1;
+    }
+
+    /* Small responsive tweak for compact side action buttons */
+    @media (max-width: 900px) {
+      button { padding: 0.6rem 0.9rem; }
+      .btn-large { padding: 0.75rem 1rem; }
+    }
+
+  </style>
+</head>
+<body class="font-body-md text-body-md antialiased">
+<script>
+  // If the user hasn't seen the welcome flow yet, send them to the standalone welcome page.
+  try {
+    if (!localStorage.getItem('vidlo_seen')) {
+      location.href = '/Welcome.html';
+    }
+  } catch (e) {
+    // ignore storage/access errors
+    console.warn('Redirect check failed', e);
+  }
+</script>
+
+<!-- Desktop Sidebar -->
+<nav class="fixed left-0 top-0 h-full w-72 bg-[#0A0A0A] border-r border-white/5 backdrop-blur-xl bg-opacity-80 flex-col py-8 px-4 justify-between z-50">
+  <div id="sidebar-brand" class="mb-8 px-4">
+    <img src="/Screenshot_2026-05-05_10.01.46_PM-removebg-preview.png" alt="vidlo logo" class="w-48 h-auto block" />
+  </div>
+
+  <ul class="flex flex-col gap-2 flex-1">
+    <!-- Live TV (now available as a button) -->
+    <li>
+      <button id="sidebar-livetv" type="button" class="w-full flex items-center justify-start livetv-row gap-4 text-gray-200 font-medium px-4 py-3 rounded-lg hover:bg-white/5 transition-colors" title="Live TV" aria-label="Live TV">
+        <span class="material-symbols-outlined">live_tv</span>
+        <span id="sidebar-livetv-label" class="font-label-md text-label-md">Live TV</span>
+      </button>
+    </li>
+
+    <li>
+      <a id="sidebar-home" class="flex items-center gap-4 text-indigo-400 font-semibold bg-white/5 rounded-lg px-4 py-3 border-l-2 border-indigo-500 active:scale-[0.98] transition-transform duration-200 ease-out" href="#">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+        <span id="sidebar-home-label" class="font-label-md text-label-md">Home</span>
+      </a>
+    </li>
+    <li>
+      <a id="sidebar-search" class="flex items-center gap-4 text-gray-400 font-medium px-4 py-3 transition-all duration-300 hover:bg-white/5 hover:text-white active:scale-[0.98] ease-out" href="#">
+        <span class="material-symbols-outlined">search</span>
+        <span id="sidebar-search-label" class="font-label-md text-label-md">Search</span>
+      </a>
+    </li>
+    <li>
+      <a id="sidebar-watchlist" class="flex items-center gap-4 text-gray-400 font-medium px-4 py-3 transition-all duration-300 hover:bg-white/5 hover:text-white active:scale-[0.98] ease-out" href="/watchlist.html">
+        <span class="material-symbols-outlined">schedule</span>
+        <span id="sidebar-watchlist-label" class="font-label-md text-label-md">Watchlist</span>
+      </a>
+    </li>
+
+    <!-- Anime quick-access -->
+    <li>
+      <a id="sidebar-anime" class="flex items-center gap-4 text-gray-400 font-medium px-4 py-3 transition-all duration-300 hover:bg-white/5 hover:text-white active:scale-[0.98] ease-out" href="/anime.html" title="Anime">
+        <span class="material-symbols-outlined">auto_stories</span>
+        <span id="sidebar-anime-label" class="font-label-md text-label-md">Anime</span>
+      </a>
+    </li>
+
+    <!-- Update log -->
+    <li>
+      <a id="sidebar-updates" class="flex items-center gap-4 text-gray-400 font-medium px-4 py-3 transition-all duration-300 hover:bg-white/5 hover:text-white active:scale-[0.98] ease-out" href="#" title="Update Log">
+        <span class="material-symbols-outlined">update</span>
+        <span id="sidebar-updates-label" class="font-label-md text-label-md">Update Log</span>
+      </a>
+    </li>
+
+    <li>
+      <a id="sidebar-settings" class="flex items-center gap-4 text-gray-400 font-medium px-4 py-3 transition-all duration-300 hover:bg-white/5 hover:text-white active:scale-[0.98] ease-out" href="#">
+        <span class="material-symbols-outlined">settings</span>
+        <span id="sidebar-settings-label" class="font-label-md text-label-md">Settings</span>
+      </a>
+    </li>
+  </ul>
+
+  <!-- Sidebar tiny footer: Vidlo + links + version (pinned to sidebar bottom) -->
+  <div id="sidebar-footer" class="px-4 mb-2 text-xs text-neutral-400 select-none" aria-hidden="false" style="position:absolute; left:1rem; right:1rem; bottom:12px; line-height:1.05">
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <span class="font-semibold text-sm text-white">Vidlo</span>
+        <nav class="flex items-center gap-1 text-[12px]">
+          <a href="/legal.html" id="sidebar-legal" class="text-neutral-400 hover:text-white hover:underline">Legal</a>
+          <span class="text-neutral-600">·</span>
+          <a href="/status.html" id="sidebar-status" class="text-neutral-400 hover:text-white hover:underline">Status</a>
+          <span class="text-neutral-600">·</span>
+          <a href="/features.html" id="sidebar-features" class="text-neutral-400 hover:text-white hover:underline">Features</a>
+        </nav>
+      </div>
+      <div class="text-neutral-500 font-mono text-[12px]">v1.4.2</div>
+    </div>
+  </div>
+
+  <button id="sidebar-collapse" class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-16 bg-[#0A0A0A] border border-white/10 rounded-full flex items-center justify-center text-gray-500 hover:text-white transition-all duration-300 group shadow-2xl z-50 hover:bg-white/5" title="Minimize Sidebar">
+    <span class="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:-translate-x-0.5" style="font-variation-settings: 'wght' 300;">chevron_left</span>
+  </button>
+</nav>
+
+<!-- MAIN -->
+<main class="flex-1 space-y-10 px-0 pb-16 w-full" id="app">
+<!-- Search Bar Overlay (centered top) -->
+<div class="pt-6 px-12 relative z-40">
+<div class="max-w-2xl mx-auto" id="desktop-search-wrap">
+<div class="relative group">
+<span class="material-symbols-outlined text-neutral-400 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-white transition-colors" data-verified="exists">search</span>
+<input class="w-full bg-[#111111]/80 backdrop-blur-md border border-white/10 text-white placeholder:text-neutral-500 py-3 pl-12 pr-10 shadow-lg focus:outline-none focus:ring-1 focus:ring-white/30 focus:bg-[#111] transition-all rounded-lg" id="desktop-search" placeholder="Search movies, series, trailers..." type="search"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white hidden bg-transparent !p-1 !min-h-0 !min-w-0" id="desktop-clear-search">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Search results -->
+<div class="px-12 -mt-4" id="search-results-wrap">
+<div class="hidden max-w-[1400px] flex flex-wrap gap-4 hide-scrollbar pb-4" id="search-results"></div>
+</div>
+<!-- HERO CAROUSEL -->
+<div class="w-full relative -mt-24 mb-8" id="hero-carousel-wrap">
+<div class="relative w-full overflow-hidden bg-black select-none" id="hero-carousel" style="height: min(85vh, calc(100vh - 120px)); min-height:360px; max-height:92vh; cursor: grab;">
+<div class="absolute bottom-6 right-28 z-30 flex gap-2" id="hero-dots"></div>
+</div>
+</div>
+<script>
+    (function(){
+      const CAROUSEL_ID = 'hero-carousel';
+      const DOTS_ID = 'hero-dots';
+      const TMDB_KEY = 'b15142dfa85e41840fcd4ab30d82488f';
+      const IMG = (p) => p ? ('https://image.tmdb.org/t/p/original' + p) : '/no-image-available.png';
+      const wrap = document.getElementById(CAROUSEL_ID);
+      if(!wrap) return;
+
+      let slides = [];
+      let GENRE_MAP = {}; 
+      let current = 0;
+      let timer = null;
+      const INTERVAL = 6000;
+
+      function buildSlide(item){
+        const slide = document.createElement('div');
+        slide.className = 'hero-slide absolute inset-0 transition-opacity duration-1000';
+        slide.style.opacity = '0';
+        
+        // Netflix-style immersive gradients
+        slide.style.backgroundImage = `
+          linear-gradient(to top, #050505 0%, rgba(5,5,5,0.7) 20%, transparent 50%), 
+          linear-gradient(to right, #050505 0%, rgba(5,5,5,0.6) 40%, transparent 100%), 
+          url('${IMG(item.backdrop_path || item.poster_path)}')`;
+        slide.style.backgroundSize = 'cover';
+        slide.style.backgroundPosition = 'center top';
+
+        const rawDesc = (item.overview || '').replace(/\s+/g, ' ').trim();
+        const DESC_LIMIT = 200;
+        const desc = rawDesc.length > DESC_LIMIT ? rawDesc.slice(0, DESC_LIMIT) + '...' : rawDesc;
+
+        const metaYear = (item.release_date || item.first_air_date || '').slice(0,4) || '';
+        const metaScore = (typeof item.vote_average !== 'undefined' && item.vote_average !== null) ? (Number(item.vote_average).toFixed(1)) : '';
+        const matchPercent = metaScore ? Math.round(metaScore * 10) + '% Match' : 'New';
+        
+        let metaCategory = 'Movie';
+        if(item.media_type === 'tv') metaCategory = 'Series';
+
+        slide.innerHTML = `
+          <div class="hero-caption" style="left: 2%; bottom: 12%; max-width: 45%;">
+            <h2 style="margin:0; font-size:clamp(2.5rem, 4vw, 4.5rem); font-weight:800; line-height:1.1; text-shadow: 2px 2px 8px rgba(0,0,0,0.8); margin-bottom: 1rem; letter-spacing: -0.02em;">
+              ${(item.title || item.name || '').replace(/"/g,'')}
+            </h2>
+
+            <div style="display:flex; gap: 1rem; align-items: center; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); margin-bottom: 1rem; font-weight: 500; font-size: 1.1rem;">
+              <span style="color:#22c55e; font-weight:700;">${matchPercent}</span>
+              <span>${metaYear}</span>
+              <span style="border: 1px solid rgba(255,255,255,0.4); padding: 0 0.4rem; border-radius: 4px; font-size: 0.8rem; background: rgba(0,0,0,0.3);">HD</span>
+              <span style="color: #a3a3a3;">${metaCategory}</span>
+            </div>
+
+            <p style="margin-bottom:1.5rem; color:rgba(255,255,255,0.9); font-size:clamp(1rem, 1.2vw, 1.1rem); line-height: 1.5; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); max-width: 90%;">
+              ${desc}
+            </p>
+
+            <div style="display:flex; gap: 1rem;">
+              <button data-tmdb="${item.id}" class="play-hero" data-type="${item.media_type || (item.title ? 'movie' : 'series')}" style="background: white; color: black; border-radius: 4px; padding: 0.7rem 1.8rem; font-size: 1.1rem; font-weight: 700; display:flex; align-items:center; gap: 0.5rem; transition: background 0.2s;">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 24px;">play_arrow</span> 
+                <span class="btn-label" data-i18n="play-btn">Play</span>
+              </button>
+              <button data-tmdb="${item.id}" data-type="${item.media_type || (item.title ? 'movie' : 'series')}" class="trailer-hero" style="background: rgba(109, 109, 110, 0.7); color: white; border-radius: 4px; padding: 0.7rem 1.8rem; font-size: 1.1rem; font-weight: 700; display:flex; align-items:center; gap: 0.5rem; transition: background 0.2s;">
+                <span class="material-symbols-outlined" style="font-size: 24px;">info</span> 
+                <span class="btn-label" data-i18n="trailer-btn">More Info</span>
+              </button>
+            </div>
+          </div>
+        `;
+
+        slide.querySelectorAll('.play-hero').forEach(b => {
+          b.addEventListener('mouseover', () => b.style.background = 'rgba(255,255,255,0.8)');
+          b.addEventListener('mouseout', () => b.style.background = 'white');
+          // click: play movie or first episode for series
+          b.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const tmdbId = b.dataset.tmdb;
+            const type = (b.dataset.type || 'movie').toString().toLowerCase();
+            const titleEl = slide.querySelector('h2');
+            const titleText = titleEl ? titleEl.textContent.trim() : '';
+            if (type === 'tv' || type === 'series') {
+              try { playTVEpisode(String(tmdbId), 1, 1, titleText); } catch (e) { console.warn('play error', e); }
+            } else {
+              try { playMovie(String(tmdbId), titleText); } catch (e) { console.warn('play error', e); }
+            }
+          });
+        });
+
+        slide.querySelectorAll('.trailer-hero').forEach(b => {
+          b.addEventListener('mouseover', () => b.style.background = 'rgba(109, 109, 110, 0.4)');
+          b.addEventListener('mouseout', () => b.style.background = 'rgba(109, 109, 110, 0.7)');
+          // click: attempt to play official trailer (YouTube) in overlay, fall back to details modal
+          b.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            const tmdbId = b.dataset.tmdb;
+            const type = (b.dataset.type || 'movie').toString().toLowerCase();
+            try {
+              // Try TMDb videos endpoint first
+              const isTV = type === 'tv' || type === 'series';
+              const endpoint = isTV
+                ? `https://api.themoviedb.org/3/tv/${encodeURIComponent(tmdbId)}/videos?api_key=${TMDB_KEY}&language=en-US`
+                : `https://api.themoviedb.org/3/movie/${encodeURIComponent(tmdbId)}/videos?api_key=${TMDB_KEY}&language=en-US`;
+              const resp = await fetch(endpoint);
+              const json = await resp.json();
+              let videos = json && Array.isArray(json.results) ? json.results : [];
+
+              // prefer trailer/teaser from YouTube
+              const yt = videos.find(v => v.site === 'YouTube' && /trailer|teaser/i.test(v.type));
+              if (yt) {
+                const embed = `https://www.youtube.com/embed/${yt.key}?autoplay=1&rel=0`;
+                const iframe = qs('#video-iframe');
+                if (iframe) {
+                  iframe.dataset.expectedImdb = tmdbId;
+                  iframe.src = embed;
+                  iframe.removeAttribute('data-fallback-used');
+                  const overlay = qs('#video-overlay');
+                  overlay.classList.remove('hidden');
+                  overlay.classList.add('fullscreen');
+                  document.body.style.overflow = 'hidden';
+                  // record history/continue if functions exist
+                  try { pushHistory(String(tmdbId), `Trailer: ${yt.name || ''}`, 'trailer'); } catch (e) {}
+                  try { pushContinue(String(tmdbId), `Trailer: ${yt.name || ''}`, 'trailer'); } catch (e) {}
+                  // monitor iframe for failure fallback
+                  watchIframeForFailure(String(tmdbId), 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4');
+                  return;
+                } else {
+                  // fallback: open YouTube page
+                  window.open(`https://www.youtube.com/watch?v=${yt.key}`, '_blank');
+                  return;
+                }
+              }
+
+              // If no YouTube trailer available, open details modal as fallback
+              try { openDetails(String(tmdbId), (isTV ? 'series' : 'movie')); } catch (e) { console.warn('openDetails error', e); }
+            } catch (err) {
+              console.warn('trailer fetch/play error', err);
+              // final fallback: open details
+              try { openDetails(String(tmdbId), (type === 'tv' ? 'series' : type)); } catch (e) { console.warn('openDetails error', e); }
+            }
+          });
+        });
+
+        return slide;
+      }
+
+      function renderDots(count){
+        const dots = document.getElementById(DOTS_ID);
+        if(!dots) return;
+        dots.innerHTML = '';
+        for(let i=0;i<count;i++){
+          const d = document.createElement('button');
+          d.className = 'hero-dot';
+          d.style.opacity = i===0 ? '1' : '0.5';
+          d.dataset.index = i;
+          d.addEventListener('click', ()=> goTo(Number(d.dataset.index)));
+          dots.appendChild(d);
+        }
+      }
+
+      function showIndex(i){
+        const all = wrap.querySelectorAll('.hero-slide');
+        all.forEach((s, idx) => {
+          s.style.opacity = idx === i ? '1' : '0';
+          s.style.pointerEvents = idx === i ? 'auto' : 'none';
+        });
+        const dots = document.getElementById(DOTS_ID);
+        if(dots){
+          Array.from(dots.children).forEach((dot, idx) => {
+            dot.style.opacity = idx === i ? '1' : '0.5';
+          });
+        }
+        current = i;
+      }
+
+      function next(){ goTo((current + 1) % slides.length); }
+      function prev(){ goTo((current - 1 + slides.length) % slides.length); }
+      function goTo(i){
+        if(!slides.length) return;
+        showIndex(i);
+        resetTimer();
+      }
+      function resetTimer(){
+        if(timer) clearInterval(timer);
+        timer = setInterval(next, INTERVAL);
+      }
+
+      // Swipe/Drag functionality
+      let startX = 0;
+      let currentX = 0;
+      let isDragging = false;
+      const SWIPE_THRESHOLD = 100;
+
+      function handleDragStart(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+        if (e.target.closest('button')) return; // Allow button clicks
+
+        startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+        isDragging = true;
+        currentX = startX;
+        wrap.style.cursor = 'grabbing';
+        
+        if (timer) clearInterval(timer);
+      }
+
+      function handleDragMove(e) {
+        if (!isDragging) return;
+        currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+      }
+
+      function handleDragEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        wrap.style.cursor = 'grab';
+        
+        const deltaX = currentX - startX;
+        if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
+          if (deltaX > 0) {
+            prev();
+          } else {
+            next();
+          }
+        } else {
+          resetTimer();
+        }
+      }
+
+      wrap.addEventListener('mousedown', handleDragStart);
+      wrap.addEventListener('touchstart', handleDragStart, { passive: true });
+      wrap.addEventListener('mousemove', handleDragMove);
+      wrap.addEventListener('touchmove', handleDragMove, { passive: true });
+      wrap.addEventListener('mouseup', handleDragEnd);
+      wrap.addEventListener('touchend', handleDragEnd);
+      wrap.addEventListener('mouseleave', handleDragEnd);
+
+      (async function loadFeatured(){
+        try{
+          const url = `https://api.themoviedb.org/3/trending/all/day?api_key=${TMDB_KEY}`;
+          const res = await fetch(url);
+          const j = await res.json();
+          const items = (j && Array.isArray(j.results)) ? j.results.filter(i => i.backdrop_path).slice(0,5) : [];
+
+          for(const it of items){
+            const slide = buildSlide(it);
+            wrap.appendChild(slide);
+            slides.push(slide);
+          }
+          if(slides.length) {
+            renderDots(slides.length);
+            showIndex(0);
+            resetTimer();
+          }
+        }catch(e){
+          console.error('carousel load failed', e);
+        }
+      })();
+    })();
+  </script>
+<!-- Rows styling: more spacing, bold titles -->
+<style>
+    section h2 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.01em; margin-bottom: 0.5rem; }
+    /* Reduced left padding to remove unnecessary blank space along left edge */
+    .row-container { padding-left: 1.5rem; padding-right: 1.5rem; max-width: 1800px; margin-left: auto; margin-right: auto; }
+    .scroll-row { padding-bottom: 2rem; padding-top: 0.5rem; gap: 0.75rem; }
+
+    /* Top 10 Row Styling: large rank sits behind posters and is half-covered by them */
+    .top10-item {
+      display: flex;
+      align-items: flex-end;
+      position: relative;
+      flex-shrink: 0;
+      padding-right: 1.5rem;
+      padding-left: 0.5rem;
+      overflow: visible; /* allow rank to overflow behind posters */
+    }
+    .top10-rank {
+      font-size: 180px;
+      font-weight: 900;
+      line-height: 0.75;
+      color: #fff;
+      margin-right: -10px; /* reduced overlap so the number shifts more to the right */
+      z-index: 0; /* sit behind posters so it's visually cut */
+      text-shadow: 2px 2px 10px rgba(0,0,0,0.7);
+      letter-spacing: -0.05em;
+      transform: translateY(-8%); /* nudged upward so the number sits higher behind posters */
+    }
+    .top10-poster {
+      width: 180px;
+      aspect-ratio: 2 / 3;
+      border-radius: 8px;
+      z-index: 2;
+      overflow: hidden;
+      transition: box-shadow 0.3s ease;
+      will-change: box-shadow;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    }
+    .top10-poster:hover {
+      z-index: 10;
+      position: relative;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.15);
+    }
+    .top10-poster img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+      transition: transform 0.4s ease;
+    }
+    .top10-poster:hover img {
+      transform: scale(1.1);
+    }
+
+    /* Studio card styles: make studio images sit cleanly inside a card with consistent sizing */
+    .studio-card {
+      min-width: 160px;
+      width: 160px;
+      height: 96px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(18,18,18,1) 0%, rgba(12,12,12,1) 100%);
+      border: 1px solid rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      cursor: pointer;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .studio-card:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .studio-card .studio-card-inner {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .studio-card img, .studio-card .studio-logo {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Make Prime Video and Disney+ logos larger and more prominent */
+    .studio-card img[alt="Amazon Prime Video"],
+    .studio-card img[alt="Disney+"] {
+      transform: scale(1.28);
+      transition: transform 0.18s ease, filter 0.12s ease;
+      max-height: 140%;
+      display: block;
+      /* boost visibility for Disney+: increase brightness/contrast/saturation */
+      /* Prime Video shares the same selector but we keep it neutral; Disney+ will get filter via its attribute match above */
+      filter: none;
+    }
+    /* Target Disney+ specifically to make it brighter and pop more */
+    .studio-card img[alt="Disney+"] {
+      filter: brightness(1.75) contrast(1.15) saturate(1.18);
+      transform: scale(1.32);
+    }
+    /* Slight extra lift on hover for those specific logos */
+    .studio-card:hover img[alt="Amazon Prime Video"],
+    .studio-card:hover img[alt="Disney+"] {
+      transform: scale(1.36);
+    }
+    /* Stronger hover effect for Disney+ to emphasize brightness on hover */
+    .studio-card:hover img[alt="Disney+"] {
+      filter: brightness(1.95) contrast(1.18) saturate(1.25);
+      transform: scale(1.42);
+    }
+
+    /* Make the HBO Max logo render as white for better contrast on dark backgrounds */
+    .studio-card img[alt="HBO Max"],
+    .studio-card img[alt="HBO Max"].studio-logo {
+      filter: invert(1) brightness(2) contrast(1.1);
+    }
+  </style>
+<section class="row-container mb-6">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Top 10 Trending Today</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="top-10-row" style="padding-top: 1rem;"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Popular - Movie</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="popular-movies"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Popular - Series</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="popular-series"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Estudios</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x">
+  <a href="/netflix.html" class="studio-card" title="Netflix" aria-label="Netflix">
+    <div class="studio-card-inner">
+      <img alt="Netflix" class="studio-logo" src="/215-2154144_transparent-background-netflix-logo__1_-removebg-preview.png" />
+    </div>
+  </a>
+  <a href="/hulu.html" class="studio-card" title="Hulu" aria-label="Hulu">
+    <div class="studio-card-inner">
+      <img alt="Hulu" class="studio-logo" src="/Hulu-Logo.wine.svg" />
+    </div>
+  </a>
+  <a href="/prime-video.html" class="studio-card" title="Prime Video" aria-label="Prime Video">
+    <div class="studio-card-inner">
+      <img alt="Prime Video" class="studio-logo" src="/amazon-prime-video-logo-1160935492577exbdaecs-removebg-preview.png" />
+    </div>
+  </a>
+  <a href="/peacock.html" class="studio-card" title="Peacock" aria-label="Peacock">
+    <div class="studio-card-inner">
+      <img alt="Peacock" class="studio-logo" src="/nbc-peacock-removebg-preview.png" />
+    </div>
+  </a>
+  <a href="/paramount-plus.html" class="studio-card" title="Paramount+" aria-label="Paramount+">
+    <div class="studio-card-inner">
+      <img alt="Paramount+" class="studio-logo" src="/Paramount+_logo.png" />
+    </div>
+  </a>
+  <a href="/disney-plus.html" class="studio-card" title="Disney+" aria-label="Disney+">
+    <div class="studio-card-inner">
+      <img alt="Disney+" class="studio-logo" src="/disney-logo-disney-icon-transparent-free-png.png" />
+    </div>
+  </a>
+  <a href="/hbo-max.html" class="studio-card" title="HBO Max" aria-label="HBO Max">
+    <div class="studio-card-inner">
+      <img alt="HBO Max" class="studio-logo" src="/HBO_Max-Logo.wine.svg" />
+    </div>
+  </a>
+</div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Series</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="series-row"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Marvel Movies</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="marvel-movies"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Disney Movies</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="disney-movies"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Peacock Movies</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="peacock-movies"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Classics</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="classics"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">HBO Max Movies</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="hbo-max-movies"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">HBO Max Series</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="hbo-max-series"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Netflix Movies</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="netflix-movies"></div>
+</section>
+<section class="row-container">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Netflix Series</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="netflix-series"></div>
+</section>
+<section class="row-container mb-12">
+<div class="flex justify-between items-end mb-2">
+<h2 class="text-white">Featured - Movie</h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar scroll-row snap-x" id="featured-movie"></div>
+</section>
+</main>
+
+<!-- DISCOVER PANEL -->
+<div id="discover-panel" class="hidden fixed inset-0 z-50 bg-[#0A0A0A] text-white overflow-auto">
+  <header class="sticky top-0 bg-[#0A0A0A]/95 backdrop-blur-lg z-40 border-b border-neutral-800/30 p-4 flex items-center gap-3">
+    <button id="discover-back" class="text-indigo-500 p-2 rounded-full">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+    </button>
+    <h2 id="discover-title" class="text-lg font-semibold">Discover</h2>
+  </header>
+
+  <main id="discover-main" class="p-2 grid grid-cols-3 gap-2">
+  </main>
+
+  <div id="discover-loading" class="w-full p-4">
+    <div class="discover-spinner" aria-hidden="true"></div>
+  </div>
+</div>
+
+<!-- DETAILS MODAL -->
+<div id="details-modal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/60" data-close></div>
+
+  <div class="relative inset-0 w-full h-full overflow-auto">
+    <div class="relative w-full min-h-full bg-transparent flex flex-col">
+      <div id="details-hero" class="w-full h-[40vh] md:h-[50vh] bg-cover bg-center"></div>
+
+      <div class="bg-[#0A0A0A] -mt-6 rounded-t-2xl p-4 flex-1">
+        <div class="max-w-3xl mx-auto">
+          <div class="text-center">
+            <h1 id="details-title" class="text-2xl md:text-3xl font-bold text-white"></h1>
+            <div id="details-meta" class="flex items-center justify-center gap-3 text-neutral-400 text-sm mt-2"></div>
+          </div>
+
+          <div class="mt-4 space-y-3">
+            <button id="play-btn" class="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3.5 rounded-xl">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span><span>Play</span>
+            </button>
+            <button id="trailer-btn" class="w-full flex items-center justify-center gap-2 bg-transparent border border-neutral-700 text-white py-3.5 rounded-xl">
+              <span class="material-symbols-outlined">movie</span><span>Watch Trailer</span>
+            </button>
+          </div>
+
+          <div class="flex justify-around items-center py-4 border-t border-neutral-800 mt-4">
+            <button id="like-btn" class="flex flex-col items-center text-neutral-400">
+              <span class="material-symbols-outlined">thumb_up</span><span class="text-[10px]">Like</span>
+            </button>
+            <button id="dislike-btn" class="flex flex-col items-center text-neutral-400">
+              <span class="material-symbols-outlined">thumb_down</span><span class="text-[10px]">Dislike</span>
+            </button>
+            <button id="watchlist-btn" class="flex flex-col items-center text-neutral-400">
+              <span class="material-symbols-outlined">bookmark_add</span><span class="text-[10px]">Watchlist</span>
+            </button>
+            <button id="share-btn" class="flex flex-col items-center text-neutral-400">
+              <span class="material-symbols-outlined">share</span><span class="text-[10px]">Share</span>
+            </button>
+          </div>
+
+          <div id="details-plot" class="mt-4 text-neutral-300 text-sm"></div>
+
+          <div id="details-episodes" class="mt-4"></div>
+        </div>
+      </div>
+
+      <button id="details-close" class="fixed right-8 top-6 bg-black/50 p-2 rounded-full text-white z-60">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- watchlist moved to a standalone page: /watchlist.html -->
+
+<!-- SETTINGS PANEL -->
+<div id="settings-panel" class="hidden fixed z-60" style="top:0; bottom:0; left:0; right:0; width:100%;">
+  <div class="absolute inset-x-0 top-0 bottom-0 bg-black/40" data-close-settings></div>
+
+  <div class="absolute inset-0 top-0 left-0 right-0 bottom-0 w-full h-full bg-gradient-to-b from-[#111215] via-[#17171a] to-[#232428] text-neutral-100 rounded-none overflow-auto border-t border-neutral-700/30">
+    <div class="min-h-full">
+
+
+      <main class="pt-24 pb-16 px-6 space-y-6 max-w-2xl mx-auto">
+        <section>
+          <h2 id="settings-account-title" class="text-xs font-semibold tracking-widest uppercase mb-3 ml-4">Account</h2>
+          <div class="bg-surface-container border border-white/5 overflow-hidden shadow-lg shadow-black/20 rounded-xl">
+            <div class="flex items-center justify-between p-4 px-5 transition-colors hover:bg-white/[0.02]">
+              <div class="flex flex-col">
+                <span id="settings-email-label" class="font-body-md text-[16px] font-medium text-on-surface">Email</span>
+                <span id="settings-email-value" class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Not signed in</span>
+              </div>
+              <button id="settings-logout" class="bg-surface-variant hover:bg-surface-bright text-on-surface font-label-md text-label-md px-5 py-2 rounded-xl transition-all shadow-sm border border-white/5 active:scale-95">
+                Logout
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between p-4 px-5 transition-colors hover:bg-white/[0.02]">
+              <div class="flex flex-col">
+                <span id="settings-danger-title" class="font-body-md text-[16px] font-medium text-on-surface">Danger Zone</span>
+              </div>
+              <button id="delete-account-btn" class="text-error font-label-md text-label-md hover:text-error/80 transition-colors active:scale-95 px-2 py-1">
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 id="settings-interface-title" class="text-xs font-semibold tracking-widest uppercase mb-3 ml-4">Interface</h2>
+          <div class="bg-surface-container border border-white/5 overflow-hidden shadow-lg shadow-black/20 rounded-xl">
+            <div class="flex items-center justify-between p-4 px-5 transition-colors hover:bg-white/[0.02]">
+              <span id="settings-language-label" class="font-body-md text-[16px] font-medium text-on-surface">Language</span>
+              <div class="relative">
+                <div class="custom-select" data-select="language" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
+                  <button type="button" class="sel-btn" aria-label="Choose language">
+                    <span class="label">English</span>
+                    <span class="material-symbols-outlined chev" aria-hidden="true">expand_more</span>
+                  </button>
+                  <ul class="sel-list hidden" role="listbox" aria-label="Language options">
+                    <li role="option" data-value="en" aria-selected="true">English</li>
+                    <li role="option" data-value="es">Spanish</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-4 px-5 transition-colors hover:bg-white/[0.02]">
+              <div class="flex flex-col w-3/4">
+                <span id="settings-blur-label" class="font-body-md text-[16px] font-medium text-on-surface">Blur unwatched episodes</span>
+                <span id="settings-blur-desc" class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Hide thumbnails to prevent spoilers</span>
+              </div>
+              <label class="switch" title="Blur unwatched episodes">
+                <input id="blur-unwatched-toggle" type="checkbox" />
+                <span class="slider" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 id="settings-server-title" class="text-xs font-semibold tracking-widest uppercase mb-3 ml-4">Server &amp; Playback</h2>
+          <div class="bg-surface-container border border-white/5 overflow-hidden shadow-lg shadow-black/20 rounded-xl">
+            <div class="flex items-center justify-between p-4 px-5 transition-colors hover:bg-white/[0.02]">
+              <span id="settings-status-label" class="font-body-md text-[16px] font-medium text-on-surface">Status</span>
+              <div id="server-status-wrap" class="flex items-center space-x-2.5 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
+                <span id="server-status-text" class="font-label-md text-sm text-green-400 font-medium">Connected</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-4 px-5 transition-colors hover:bg-white/[0.02]">
+              <span id="settings-torrent-label" class="font-body-md text-[16px] font-medium text-on-surface">Torrent Profile</span>
+              <div class="relative">
+                <div class="custom-select" data-select="torrent" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
+                  <button type="button" class="sel-btn" aria-label="Choose torrent profile">
+                    <span class="label">Balanced</span>
+                    <span class="material-symbols-outlined chev" aria-hidden="true">expand_more</span>
+                  </button>
+                  <ul class="sel-list hidden" role="listbox" aria-label="Torrent profile options">
+                    <li id="torrent-balanced" role="option" data-value="balanced" aria-selected="true">
+                      Balanced
+                      <span class="meta" id="torrent-balanced-meta">Balanced speed and resource usage</span>
+                    </li>
+                    <li id="torrent-performance" role="option" data-value="speed">
+                      Performance
+                      <span class="meta" id="torrent-performance-meta">Maximise download speed</span>
+                    </li>
+                    <li id="torrent-low" role="option" data-value="low">
+                      Low Latency
+                      <span class="meta" id="torrent-low-meta">Lower buffering, conservative resources</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-4 px-5 transition-colors hover:bg-white/[0.02]">
+              <span id="settings-cache-label" class="font-body-md text-[16px] font-medium text-on-surface">Cache Size</span>
+              <div class="flex items-center space-x-2 bg-surface-variant rounded-2xl p-1 border border-white/5 shadow-inner">
+                <button id="cache-decrease" class="text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-xl transition-colors flex items-center justify-center w-8 h-8 active:scale-95" aria-label="Decrease cache size"><span class="material-symbols-outlined text-sm">remove</span></button>
+                <span id="cache-size-display" class="font-label-md text-[15px] font-medium text-on-surface w-12 text-center">5.0 GB</span>
+                <button id="cache-increase" class="text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-xl transition-colors flex items-center justify-center w-8 h-8 active:scale-95" aria-label="Increase cache size"><span class="material-symbols-outlined text-sm">add</span></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 id="settings-about-title" class="text-xs font-semibold tracking-widest uppercase mb-3 ml-4">About</h2>
+          <div class="bg-surface-container border border-white/5 overflow-hidden shadow-lg shadow-black/20 rounded-xl">
+            <div class="flex items-center justify-between p-4 px-5 transition-colors hover:bg-white/[0.02]">
+              <span id="settings-appversion-label" class="font-body-md text-[16px] font-medium text-on-surface">App Version</span>
+              <span id="settings-appversion-value" class="font-label-md text-label-md text-on-surface-variant font-mono">v1.4.2</span>
+            </div>
+            <div class="flex items-center justify-between p-4 px-5 transition-colors hover:bg-white/[0.02]">
+              <span id="settings-serverversion-label" class="font-body-md text-[16px] font-medium text-on-surface">Server Version</span>
+              <span id="settings-serverversion-value" class="font-label-md text-label-md text-on-surface-variant font-mono">v2.0.8-stable</span>
+            </div>
+            <div class="p-4 px-5 bg-surface-container-low/50">
+              <div class="text-sm text-neutral-300">
+                <span id="about-credits">Made by Brian Subirat — see my other projects: <a href="https://pakodev-profile.pages.dev/" class="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">https://pakodev-profile.pages.dev/</a></span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- Update log panel (slide-in) -->
+<div id="update-log-panel" class="hidden fixed top-0 left-72 bottom-0 w-[420px] bg-[#0B0B0D] border-l border-white/5 z-60 p-4 overflow-auto" style="box-shadow: -18px 0 40px rgba(0,0,0,0.6);">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-lg font-semibold text-white">Update Log</h3>
+    <button id="update-log-close" class="text-neutral-300 p-2 rounded hover:bg-white/5"><span class="material-symbols-outlined">close</span></button>
+  </div>
+  <div id="update-log-contents" class="space-y-3 text-sm text-neutral-300">
+    <div class="bg-white/2 p-3 rounded">
+      <div class="text-xs text-neutral-200 font-semibold">2026-06-01 — v1.4.2</div>
+      <div class="mt-1 text-neutral-300">Added curated rows and improved search stability.</div>
+    </div>
+    <div class="bg-white/2 p-3 rounded">
+      <div class="text-xs text-neutral-200 font-semibold">2026-05-05 — v1.4.1</div>
+      <div class="mt-1 text-neutral-300">UI tweaks and Discover refresh.</div>
+    </div>
+    <div class="p-2 text-neutral-400">More entries will appear here as updates are published.</div>
+  </div>
+</div>
+
+<!-- VIDEO OVERLAY -->
+<div id="video-overlay" class="hidden vid-overlay">
+  <div class="vid-frame" data-tv-focus="true" tabindex="0" role="dialog" aria-label="Video player">
+    <button id="video-close" class="close-btn bg-white/10 p-2 rounded-full text-white"><span class="material-symbols-outlined">close</span></button>
+    <iframe id="video-iframe" src="" frameborder="0" allowfullscreen style="width:100%; height:100%; border:0;" data-tv-focus="true" tabindex="0" role="application" aria-label="Embedded video"></iframe>
+  </div>
+</div>
+
+<!-- lightweight status/toast area -->
+<div id="toast" class="fixed bottom-8 right-4 z-60 hidden bg-black/70 text-white px-4 py-2 rounded"></div>
+
+<script>
+/* The JavaScript implementation is preserved with desktop-only assumptions.
+   Mobile-only elements (bottom nav, mobile search) were removed from the DOM,
+   so references to them are guarded. The original logic for rows, details,
+   watchlist, discover, settings, auth modal, iframe playback, caching and
+   localization remains intact so movie details, sign-in/up, duplicate desktop
+   panels and settings work as requested.
+*/
+
+/* Minimal helpers and state (kept consistent with original app) */
+/* Switch search/details to The Movie Database (TMDb) while keeping the app's expected card shape.
+   TMDB key provided by user: b15142dfa85e41840fcd4ab30d82488f
+*/
+const TMDB_KEY = 'b15142dfa85e41840fcd4ab30d82488f';
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+
+// Helper to normalize TMDb result into the app's expected small "OMDb-like" item shape
+function tmdbToCard(item) {
+  const title = item.title || item.name || item.original_title || item.original_name || '';
+  const posterPath = item.poster_path || item.backdrop_path || null;
+  return {
+    Title: title,
+    Poster: posterPath ? (TMDB_IMAGE_BASE + posterPath) : 'no-image-available.png',
+    Type: item.media_type || (item.title ? 'movie' : 'series'),
+    imdbID: String(item.id) // keep TMDB id as string; other functions will accept this form
+  };
+}
+
+// TMDb search (multi) cached wrapper - returns a response shaped similar to OMDb { Search: [...] }
+function omdbSearchUrl(q, page = 1){
+  // not used for TMDb, kept for compatibility if referenced elsewhere
+  return `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&page=${page}`;
+}
+
+async function fetchOmdbSearchCached(query, page = 1){
+  const cacheKey = `search:${query}:p${page}`;
+  const cached = cacheGet(cacheKey, OMDB_CACHE_TTL_MIN);
+  if(cached) return cached;
+
+  try{
+    logOmdbRequest();
+    const url = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&page=${page}&include_adult=false`;
+    const res = await fetch(url);
+    const json = await res.json();
+    // map TMDb results to an OMDb-like structure
+    const mapped = { Search: [], totalResults: json.total_results || 0, Response: json.results && json.results.length ? 'True' : 'False' };
+    if(json && json.results && json.results.length){
+      mapped.Search = json.results.map(tmdbToCard);
+    }
+    cacheSet(cacheKey, mapped);
+    return mapped;
+  }catch(e){
+    // fall back to empty shape
+    return { Search: [], totalResults: 0, Response: 'False' };
+  }
+}
+
+// TMDb details cached wrapper: accepts a tmdb id string and a type hint (movie|series)
+async function fetchOmdbDetailsCached(imdbID, typeHint = 'movie'){
+  if(!imdbID) return null;
+  const cacheKey = `details:tmdb:${imdbID}:${typeHint}`;
+  const cached = cacheGet(cacheKey, OMDB_CACHE_TTL_MIN);
+  if(cached) return cached;
+  try{
+    logOmdbRequest();
+    // determine whether to call movie or tv endpoint based on typeHint
+    const isTV = (String(typeHint).toLowerCase() === 'series' || String(typeHint).toLowerCase() === 'tv' || String(typeHint).toLowerCase() === 'episode');
+    // request additional data (credits, videos) to enrich the details UI
+    const append = 'credits,videos';
+    const endpoint = isTV
+      ? `https://api.themoviedb.org/3/tv/${encodeURIComponent(imdbID)}?api_key=${TMDB_KEY}&language=en-US&append_to_response=${append}`
+      : `https://api.themoviedb.org/3/movie/${encodeURIComponent(imdbID)}?api_key=${TMDB_KEY}&language=en-US&append_to_response=${append}`;
+    const res = await fetch(endpoint);
+    const data = await res.json();
+    if(!data || data.status_code) { cacheSet(cacheKey, null); return null; }
+
+    // Map TMDb details to the fields the app expects in openDetails
+    const mapped = {
+      Response: 'True',
+      imdbID: String(imdbID),
+      Title: data.title || data.name || '',
+      Year: (data.release_date || data.first_air_date || '').slice(0,4) || '',
+      Runtime: (data.runtime ? `${data.runtime} min` : (data.episode_run_time && data.episode_run_time[0] ? `${data.episode_run_time[0]} min` : '')),
+      Rated: data.adult ? 'R' : 'NR',
+      Poster: data.poster_path ? (TMDB_IMAGE_BASE + data.poster_path) : (data.backdrop_path ? (TMDB_IMAGE_BASE + data.backdrop_path) : 'no-image-available.png'),
+      Plot: data.overview || '',
+      Type: isTV ? 'series' : 'movie',
+      // Additional friendly fields from TMDb
+      Genres: Array.isArray(data.genres) ? data.genres.map(g => g.name).join(', ') : '',
+      VoteAverage: data.vote_average ? Number(data.vote_average).toFixed(1) : '',
+      // Preserve raw TMDb payload for trailers/credits/etc.
+      _raw: data
+    };
+    cacheSet(cacheKey, mapped);
+    return mapped;
+  }catch(e){
+    return null;
+  }
+}
+
+const state = { lastDetails: null };
+
+function qs(sel, el=document) { return el.querySelector(sel) }
+function qsa(sel, el=document) { return Array.from(el.querySelectorAll(sel)) }
+
+function showToast(keyOrMsg, ms=1500){
+  let text = String(keyOrMsg || '');
+  try{
+    const lang = localStorage.getItem('app_language') || 'en';
+    if(window.TOAST_MAP && typeof keyOrMsg === 'string' && window.TOAST_MAP[lang] && window.TOAST_MAP[lang][keyOrMsg]){
+      text = window.TOAST_MAP[lang][keyOrMsg];
+    }
+  }catch(e){}
+  const t = qs('#toast');
+  if(!t) return;
+  t.textContent = text;
+  t.classList.remove('hidden');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=> t.classList.add('hidden'), ms);
+}
+
+const storage = {
+  get(key, def = []) {
+    try { return JSON.parse(localStorage.getItem(key) || 'null') ?? def } catch { return def }
+  },
+  set(key, val) { localStorage.setItem(key, JSON.stringify(val)) }
+};
+
+function markBrokenEmbed(imdbID){
+  const broken = new Set(storage.get('brokenEmbeds', []));
+  broken.add(imdbID);
+  storage.set('brokenEmbeds', [...broken]);
+  document.querySelectorAll(`[data-imdb="${imdbID}"]`).forEach(el => el.remove());
+}
+function isBrokenEmbed(imdbID){
+  return storage.get('brokenEmbeds', []).includes(imdbID);
+}
+function toggleSet(key, id){
+  const arr = new Set(storage.get(key, []));
+  if(arr.has(id)){ arr.delete(id); storage.set(key, [...arr]); return false } else { arr.add(id); storage.set(key, [...arr]); return true }
+}
+function toggleWatchlist(details){
+  const list = storage.get('watchlist', []);
+  const idx = list.findIndex(it => it.id === details.imdbID);
+  if(idx !== -1){
+    list.splice(idx, 1);
+    storage.set('watchlist', list);
+    return false;
+  } else {
+    list.unshift({
+      id: details.imdbID,
+      title: details.Title || details.title || '',
+      poster: (details.Poster && details.Poster !== 'N/A') ? details.Poster : 'no-image.png',
+      type: details.Type || details.type || 'movie'
+    });
+    storage.set('watchlist', list);
+    return true;
+  }
+}
+function hasIn(key, id){
+  const arr = storage.get(key, []);
+  if(key === 'watchlist'){
+    return arr.some(item => item && (item.id === id || item.imdbID === id));
+  }
+  return arr.includes(id);
+}
+
+/* Card rendering (keeps desktop visuals) */
+function makePosterCard(item, opts = {}) {
+  const { title = item.Title || '', poster: rawPoster = item.Poster || '', type = item.Type || 'movie', imdbID = item.imdbID } = item;
+  // Normalize poster: use a "No Image Available" fallback when the source is missing, invalid, or fails to load.
+  const FALLBACK_POSTER = 'no-image-available.png';
+  let poster = rawPoster;
+  if(!poster || poster === 'N/A' || String(poster).trim() === '' ) {
+    poster = FALLBACK_POSTER;
+  }
+
+  // still allow cards that already point to a fallback (do not skip)
+  const wrapper = document.createElement('div');
+  wrapper.className = 'poster-card relative min-w-[120px] w-[140px] aspect-[2/3] rounded-lg overflow-hidden snap-start flex-shrink-0 group cursor-pointer';
+  wrapper.dataset.imdb = imdbID;
+  wrapper.tabIndex = 0;
+  wrapper.setAttribute('role', 'button');
+  wrapper.setAttribute('aria-label', title || 'Open details');
+  wrapper.dataset.tvFocus = 'true';
+
+  const cont = storage.get('continue', []);
+  const hist = storage.get('history', []);
+  const watchedIds = new Set([
+    ...cont.map(i => i.id || i),
+    ...hist.map(i => (i && (i.id || i)) || i)
+  ]);
+  const isWatched = watchedIds.has(imdbID);
+  const bodyBlurEnabled = document.body.dataset.blurUnwatched === '1';
+  const shouldBlur = bodyBlurEnabled && !isWatched;
+  const src = poster;
+
+  // build the DOM manually so we can attach an onerror handler to the image element
+  const img = document.createElement('img');
+  img.alt = title;
+  img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 poster-img';
+  img.src = src;
+  // if image fails to load, replace with the fallback asset (avoid infinite loop)
+  img.onerror = function() {
+    if(this.src && !this.src.includes(FALLBACK_POSTER)) {
+      this.src = FALLBACK_POSTER;
+    }
+  };
+
+  wrapper.appendChild(img);
+
+  if(shouldBlur) {
+    const badge = document.createElement('div');
+    badge.className = 'unwatched-badge';
+    badge.innerHTML = '<span class="material-symbols-outlined">visibility_off</span><span>Unwatched</span>';
+    wrapper.appendChild(badge);
+    wrapper.classList.add('blurred-unwatched');
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = `absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent ${shouldBlur ? 'opacity-30' : 'opacity-0'} group-hover:opacity-100 transition-opacity flex items-end p-2`;
+  const titleEl = document.createElement('span');
+  titleEl.className = 'text-sm text-white line-clamp-1';
+  titleEl.textContent = title;
+  overlay.appendChild(titleEl);
+  wrapper.appendChild(overlay);
+
+  const open = async () => {
+    // Resolve the actual TMDb details first, then deep-link to the appropriate details page
+    try {
+      // fetchOmdbDetailsCached returns the mapped details (uses TMDb under the hood)
+      const details = await fetchOmdbDetailsCached(imdbID, type);
+      const resolvedType = (details && details.Type && String(details.Type).toLowerCase() === 'series') ? 'tv' : 'movie';
+      const url = `/details.html?tmdb=${encodeURIComponent(imdbID)}&type=${encodeURIComponent(resolvedType)}`;
+      window.location.href = url;
+    } catch (err) {
+      // fallback: if navigation fails, attempt to open the in-app modal using existing helper
+      try { openDetails(imdbID, type); } catch (e) {}
+    }
+  };
+
+  wrapper.addEventListener('click', (e) => {
+    open();
+  });
+
+  wrapper.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      open();
+    }
+  });
+
+  return wrapper;
+}
+
+window.updateBlurOnAllCards = function(){
+  const cont = storage.get('continue', []);
+  const hist = storage.get('history', []);
+  const watchedIds = new Set([
+    ...cont.map(i => i.id || i),
+    ...hist.map(i => (i && (i.id || i)) || i)
+  ]);
+  const bodyBlurEnabled = document.body.dataset.blurUnwatched === '1';
+  document.querySelectorAll('[data-imdb]').forEach(card => {
+    const id = card.dataset.imdb;
+    const isWatched = watchedIds.has(id);
+    const shouldBlur = bodyBlurEnabled && !isWatched;
+    if(shouldBlur){
+      card.classList.add('blurred-unwatched');
+      if(!card.querySelector('.unwatched-badge')){
+        const b = document.createElement('div');
+        b.className = 'unwatched-badge';
+        b.innerHTML = '<span class="material-symbols-outlined">visibility_off</span><span>Unwatched</span>';
+        card.appendChild(b);
+      }
+    } else {
+      card.classList.remove('blurred-unwatched');
+      const bad = card.querySelector('.unwatched-badge');
+      if(bad) bad.remove();
+    }
+  });
+};
+
+/* helper: compute how many cards are needed to fill the row plus one extra */
+function computeNeededCardsForContainer(container, cardWidth = 140, gap = 16) {
+  try {
+    const cw = Math.max(0, container.clientWidth || container.offsetWidth || 0);
+    // approximate per-card space includes gap; ensure at least 6
+    const per = cardWidth + gap;
+    const needed = Math.ceil(cw / Math.max(1, per)) + 1;
+    return Math.max(6, needed);
+  } catch (e) {
+    return 8;
+  }
+}
+
+/* Populate rows (optimized cached variant retained) */
+const OMDB_CACHE_TTL_MIN = 30;
+const OMDB_REQ_COUNT_KEY = 'omdb_request_count';
+const OMDB_CACHE_PREFIX = 'omdb_cache_v1:';
+function logOmdbRequest(){ try{ const cur = parseInt(localStorage.getItem(OMDB_REQ_COUNT_KEY)||'0',10) || 0; localStorage.setItem(OMDB_REQ_COUNT_KEY, String(cur+1)); }catch(e){} }
+function normalizeCacheKey(key){
+  // Normalize the searchable portion for keys like "search:<query>:p<page>" to be case-insensitive.
+  try{
+    return key.replace(/^search:([^:]+)(:p\d+)?/i, (m, q, page) => {
+      return `search:${String(q).toLowerCase()}${page || ''}`;
+    });
+  }catch(e){
+    return key;
+  }
+}
+function cacheSet(key, value){
+  try{
+    const payload = { at: Date.now(), data: value };
+    const norm = normalizeCacheKey(key);
+    localStorage.setItem(OMDB_CACHE_PREFIX + norm, JSON.stringify(payload));
+  }catch(e){}
+}
+function cacheGet(key, ttlMinutes = OMDB_CACHE_TTL_MIN){
+  try{
+    const norm = normalizeCacheKey(key);
+    const raw = localStorage.getItem(OMDB_CACHE_PREFIX + norm);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    if(!obj || !obj.at) return null;
+    const ageMin = (Date.now() - obj.at) / 60000;
+    if(ageMin > ttlMinutes){
+      localStorage.removeItem(OMDB_CACHE_PREFIX + norm);
+      return null;
+    }
+    return obj.data;
+  }catch(e){ return null; }
+}
+/* Removed duplicate OMDb search wrapper that unintentionally overrode the TMDb-backed
+   fetchOmdbSearchCached defined earlier. The app now uses the TMDb-aware
+   fetchOmdbSearchCached implementation above which supports movies and series. */
+/* Replace previous direct OMDb details usage: openDetails will call fetchOmdbDetailsCached(imdbID, type) */
+async function isRatedValid(imdbID){
+  // Ratings filtering removed: always consider rating valid so items like TV-MA are not excluded.
+  return true;
+}
+
+/* Row mapping and populate implementation */
+const PREDEFINED = {
+  trending: ['Inception','Avengers','Interstellar','Matrix'],
+  popular: ['The Shawshank Redemption','The Dark Knight','Pulp Fiction','Forrest Gump'],
+  action: ['Mad Max','John Wick','Die Hard','Gladiator'],
+  comedy: ['Superbad','Step Brothers','The Grand Budapest Hotel','Anchorman'],
+  drama: ['The Godfather','Fight Club','Good Will Hunting','Whiplash']
+};
+
+async function populateRowsOptimized(){
+  // New mapping uses TMDb popular endpoints rather than title-based search arrays.
+  const mapping = [
+    { key: 'popular_movies', type: 'movie', endpoint: '/movie/popular', containerId: '#popular-movies', limit: 12 },
+    { key: 'popular_series', type: 'tv', endpoint: '/tv/popular', containerId: '#popular-series', limit: 14 },
+    { key: 'series', type: 'tv', endpoint: '/tv/popular', containerId: '#series-row', limit: 10 },
+    { key: 'marvel', type: 'movie', endpoint: '/movie/popular', containerId: '#marvel-movies', limit: 14 },
+    { key: 'disney', type: 'movie', endpoint: '/discover/movie', with_companies: '2', containerId: '#disney-movies', limit: 10 }, // Disney company id 2
+    { key: 'peacock', type: 'movie', endpoint: '/movie/popular', containerId: '#peacock-movies', limit: 8 },
+    { key: 'classics', type: 'movie', endpoint: '/discover/movie', primary_release_year: '1990', containerId: '#classics', limit: 10 },
+    { key: 'hbomax_movies', type: 'movie', endpoint: '/discover/movie', with_companies: '49', containerId: '#hbo-max-movies', limit: 10 }, // Warner Bros. as proxy
+    { key: 'hbomax_series', type: 'tv', endpoint: '/tv/popular', containerId: '#hbo-max-series', limit: 8 },
+    { key: 'netflix_movies', type: 'movie', endpoint: '/discover/movie', with_companies: '213', containerId: '#netflix-movies', limit: 10 }, // Netflix company id 213
+    { key: 'netflix_series', type: 'tv', endpoint: '/tv/popular', containerId: '#netflix-series', limit: 10 },
+    { key: 'featured', type: 'movie', endpoint: '/movie/top_rated', containerId: '#featured-movie', limit: 12 }
+  ];
+
+  // helper to fetch TMDb endpoint and return mapped cards
+  async function fetchTmdbList({ endpoint, type = 'movie', params = {}, page = 1 }) {
+    try {
+      const url = new URL(`https://api.themoviedb.org/3${endpoint}`);
+      url.searchParams.set('api_key', TMDB_KEY);
+      url.searchParams.set('language', 'en-US');
+      url.searchParams.set('page', String(page));
+      // apply extra params (like with_companies)
+      Object.keys(params || {}).forEach(k => {
+        if(params[k]) url.searchParams.set(k, params[k]);
+      });
+      const res = await fetch(url.toString());
+      const json = await res.json();
+      const results = json && Array.isArray(json.results) ? json.results : [];
+      return results.map(tmdbToCard);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async function renderRowFromTmdb(map, container){
+    if(!container) return 0;
+    const desired = computeNeededCardsForContainer(container);
+    const limit = Math.max(map.limit || 6, desired);
+    const loader = document.createElement('div'); loader.className = 'row-loader';
+    const parentForLoader = container.parentElement || container;
+    if(container.parentElement) parentForLoader.insertBefore(loader, container); else parentForLoader.appendChild(loader);
+    try { container.classList.add('cards-loading'); } catch(e){}
+    let added = 0;
+    try{
+      // attempt first page
+      const params = {};
+      if(map.with_companies) params.with_companies = map.with_companies;
+      if(map.with_keywords) params.with_keywords = map.with_keywords;
+      if(map.primary_release_year) params.primary_release_year = map.primary_release_year;
+      const items = await fetchTmdbList({ endpoint: map.endpoint, type: map.type, params, page: 1 });
+      if(items && items.length){
+        for(const it of items.slice(0, limit)){
+          if(isBrokenEmbed(it.imdbID)) continue;
+          try{
+            const okRated = await isRatedValid(it.imdbID);
+            if(!okRated) continue;
+          }catch(e){ continue; }
+          const card = makePosterCard(it);
+          if(card) container.appendChild(card);
+          added++;
+        }
+      } else {
+        const note = document.createElement('div'); note.className = 'loader-center'; container.appendChild(note);
+      }
+    }catch(e){
+      const note = document.createElement('div'); note.className = 'loader-center'; container.appendChild(note);
+    } finally {
+      if(loader && loader.parentElement) loader.remove();
+      try { container.classList.remove('cards-loading'); } catch(e) {}
+    }
+    return added;
+  }
+
+  // New: populate Top 10 Trending Today row explicitly so it shows content
+  async function populateTop10Row(){
+    // Render Top 10 with a large left-side rank number that sits behind posters
+    try {
+      const container = qs('#top-10-row');
+      if(!container) return 0;
+      container.innerHTML = '';
+
+      const url = `https://api.themoviedb.org/3/trending/all/day?api_key=${TMDB_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const items = (data && Array.isArray(data.results)) ? data.results.slice(0, 10) : [];
+
+      for (let i = 0; i < items.length; i++){
+        const it = items[i];
+        // normalize TMDb item and create poster card
+        const cardItem = tmdbToCard(it);
+        cardItem.Type = it.media_type === 'tv' ? 'series' : (cardItem.Type || 'movie');
+        cardItem.imdbID = String(it.id || cardItem.imdbID || '');
+        const card = makePosterCard(cardItem);
+        if(card){
+          // wrap the poster and a large rank number so the number sits behind the poster
+          const wrapper = document.createElement('div');
+          wrapper.className = 'top10-item';
+          // large rank element (CSS defined earlier handles size and clipping)
+          const rankEl = document.createElement('div');
+          rankEl.className = 'top10-rank';
+          rankEl.textContent = String(i + 1);
+          // ensure poster sits above the rank
+          card.style.position = 'relative';
+          card.style.zIndex = '2';
+          // append rank first so it sits behind the poster (rank has lower z-index via CSS)
+          wrapper.appendChild(rankEl);
+          wrapper.appendChild(card);
+          container.appendChild(wrapper);
+        }
+      }
+
+      return items.length;
+    } catch (e) {
+      console.warn('populateTop10Row failed', e);
+      return 0;
+    }
+  }
+
+  let totalAdded = 0;
+
+  // populate top 10 first so users see it immediately
+  try { await populateTop10Row(); } catch(e){}
+
+  for(const map of mapping){
+    const container = qs(map.containerId);
+    if(!container) continue;
+    container.innerHTML = '';
+    let rowAdded = 0;
+    try{
+      rowAdded = await renderRowFromTmdb(map, container);
+    }catch(e){ rowAdded = 0; }
+    if(rowAdded === 0){
+      const center = document.createElement('div'); center.className = 'loader-center'; center.innerHTML = ''; container.appendChild(center);
+    }
+    totalAdded += rowAdded;
+  }
+
+  if(typeof setServerStatus === 'function') setServerStatus(totalAdded > 0);
+}
+
+/* Details modal, play, episodes, iframe monitoring, history/continue/watchlist */
+async function openDetails(imdbID, type='movie'){
+  try{
+    // imdbID here may be a TMDb id (string). Use the TMDb details wrapper which returns an OMDb-like mapped object.
+    const data = await fetchOmdbDetailsCached(imdbID, type);
+    if(data && data.Response !== 'False' && data !== null){
+      state.lastDetails = data;
+      // persist the last opened details so remote Back can deep-link back to it
+      try { localStorage.setItem('last_opened_tmdb', JSON.stringify({ id: String(data.imdbID), type: String(data.Type || 'movie') })); } catch (e) {}
+      qs('#details-hero').style.backgroundImage = `url('${(data.Poster && data.Poster !== 'N/A') ? data.Poster : 'no-image.png'}')`;
+      qs('#details-title').textContent = `${data.Title || ''}`;
+      // include numeric score (VoteAverage) shown as "X/10" when available
+      const score = data.VoteAverage ? `${data.VoteAverage}/10` : '';
+      qs('#details-meta').innerHTML = `${data.Year || ''} <span class="w-1 h-1 rounded-full bg-neutral-500 inline-block"></span> ${data.Runtime || ''} <span class="w-1 h-1 rounded-full bg-neutral-500 inline-block"></span> ${data.Rated || ''}${score ? ' <span class="w-1 h-1 rounded-full bg-neutral-500 inline-block"></span> ' + `<span title="Average score" class="text-yellow-400 text-sm">★ ${score}</span>` : ''}`;
+      qs('#details-plot').textContent = data.Plot || '';
+      const episodesWrap = qs('#details-episodes'); episodesWrap.innerHTML = '';
+
+      // If this is a series, add a season selector and render episode list for the selected season.
+      if(type === 'series' || (data.Type && data.Type.toLowerCase()==='series')){
+        // Title for episodes block
+        const epTitle = document.createElement('h3'); epTitle.className='text-white font-semibold mb-2'; epTitle.textContent='Episodes';
+        episodesWrap.appendChild(epTitle);
+
+        // Season selector container (render as clickable season buttons)
+        const seasonWrap = document.createElement('div');
+        seasonWrap.className = 'mb-3';
+        // label row
+        const seasonLabelRow = document.createElement('div');
+        seasonLabelRow.className = 'flex items-center justify-between gap-3 mb-2';
+        const seasonLabel = document.createElement('div');
+        seasonLabel.className = 'text-sm text-neutral-400';
+        seasonLabel.textContent = 'Season';
+        seasonLabelRow.appendChild(seasonLabel);
+        seasonWrap.appendChild(seasonLabelRow);
+
+        // buttons container
+        const seasonButtons = document.createElement('div');
+        seasonButtons.id = 'details-season-buttons';
+        seasonButtons.className = 'flex items-center gap-2 mb-3 flex-wrap';
+        seasonWrap.appendChild(seasonButtons);
+        episodesWrap.appendChild(seasonWrap);
+
+        // Helper to render episodes for a given season (uses TMDb raw payload if available, otherwise placeholders)
+        async function renderEpisodesForSeason(seasonNum){
+          // remove existing episode buttons (but keep title + season selector)
+          Array.from(episodesWrap.querySelectorAll('.episode-btn')).forEach(n => n.remove());
+
+          const raw = data._raw || {};
+          let episodesList = null;
+
+          // Prefer episodes included in cached payload if present
+          try {
+            if(raw._season_episodes && raw._season_episodes[seasonNum] && Array.isArray(raw._season_episodes[seasonNum])){
+              episodesList = raw._season_episodes[seasonNum];
+            } else if(raw.seasons && Array.isArray(raw.seasons)) {
+              // If the raw payload includes seasons but not episodes, fetch season details from TMDb
+              try {
+                const seasonEndpoint = `https://api.themoviedb.org/3/tv/${encodeURIComponent(data.imdbID)}/season/${encodeURIComponent(seasonNum)}?api_key=${TMDB_KEY}&language=en-US`;
+                const resp = await fetch(seasonEndpoint);
+                const seasonJson = await resp.json();
+                if(seasonJson && Array.isArray(seasonJson.episodes) && seasonJson.episodes.length){
+                  episodesList = seasonJson.episodes;
+                  // cache into the details payload for future use (non-persistent)
+                  if(!data._raw) data._raw = {};
+                  if(!data._raw._season_episodes) data._raw._season_episodes = {};
+                  data._raw._season_episodes[seasonNum] = episodesList;
+                }
+              } catch (e) {
+                // network or parse error — fall back to placeholders
+                episodesList = null;
+              }
+            }
+          } catch (e) {
+            episodesList = null;
+          }
+
+          // If we still have no episode list, fall back to an estimated episode_count or placeholder list
+          let episodeCount = 3;
+          try {
+            if(episodesList && episodesList.length) {
+              episodeCount = episodesList.length;
+            } else {
+              if(raw.seasons && Array.isArray(raw.seasons)){
+                const m = raw.seasons.find(s => Number(s.season_number) === Number(seasonNum));
+                if(m && m.episode_count) episodeCount = Math.max(1, Number(m.episode_count));
+              }
+            }
+          } catch (e) { episodeCount = 3; }
+
+          // build episode buttons (either from episodesList or placeholders numbered 1..episodeCount)
+          for(let e=1;e<=episodeCount;e++){
+            const btn = document.createElement('button');
+            btn.className = 'episode-btn w-full text-left bg-transparent border border-neutral-800/40 py-2 px-3 rounded-md mb-2 flex justify-between items-center text-sm';
+            const epData = episodesList && episodesList[e-1] ? episodesList[e-1] : null;
+            const epLabel = epData && (epData.name || epData.title) ? `${epData.name || epData.title}` : `S${seasonNum}:E${e}`;
+            const epDesc = `Play episode ${e}`;
+            // show episode runtime/air_date where available
+            const meta = epData ? (epData.air_date ? ` • ${epData.air_date}` : '') : '';
+            // Use TMDb episode stills as a preview image when available, otherwise fall back to no-image placeholder.
+            const stillSrc = (epData && epData.still_path) ? (TMDB_IMAGE_BASE + epData.still_path) : 'no-image-available.png';
+            btn.innerHTML = `
+              <div class="flex items-center gap-3">
+                <img src="${stillSrc}" alt="${epLabel}" class="w-28 h-16 object-cover rounded-md flex-shrink-0" onerror="this.src='no-image-available.png'">
+                <div class="flex-1">
+                  <div class="font-medium text-white">${epLabel}${meta}</div>
+                  <div class="text-neutral-400 text-xs mt-0.5">${epDesc}</div>
+                </div>
+              </div>
+              <div class="material-symbols-outlined text-neutral-300">play_arrow</div>
+            `;
+            // capture e as episode number for click handler
+            btn.addEventListener('click', ()=> playTVEpisode(data.imdbID, seasonNum, e, data.Title));
+            episodesWrap.appendChild(btn);
+          }
+        }
+
+        // Populate season buttons from TMDb payload if available, otherwise default to Season 1
+        let seasons = [{ season_number: 1 }];
+        try {
+          if(data._raw && Array.isArray(data._raw.seasons) && data._raw.seasons.length){
+            seasons = data._raw.seasons.slice().sort((a,b) => (a.season_number||0) - (b.season_number||0));
+          }
+        } catch(e){ seasons = [{ season_number: 1 }]; }
+
+        // Build buttons
+        seasonButtons.innerHTML = '';
+        seasons.forEach(s => {
+          const num = s.season_number || s.season || 1;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'season-btn text-sm py-1 px-3 bg-transparent border border-white/12 rounded-full text-white/80 hover:text-white hover:bg-white/6 transition shadow-sm ring-1 ring-white/6 focus:ring-white/10';
+          btn.dataset.season = String(num);
+          btn.setAttribute('aria-pressed', 'false');
+          btn.textContent = `Season ${num}`;
+          btn.addEventListener('click', (ev) => {
+            // mark active
+            seasonButtons.querySelectorAll('.season-btn').forEach(x => { x.classList.remove('bg-blue-600','text-white'); x.setAttribute('aria-pressed','false'); });
+            btn.classList.add('bg-blue-600','text-white');
+            btn.setAttribute('aria-pressed','true');
+            const sn = Number(btn.dataset.season) || 1;
+            renderEpisodesForSeason(sn);
+            // focus first episode button for accessibility after rendering
+            setTimeout(()=> {
+              const firstEp = episodesWrap.querySelector('.episode-btn');
+              if(firstEp) firstEp.focus();
+            }, 40);
+          });
+          seasonButtons.appendChild(btn);
+        });
+
+        // Try to pre-select last watched season if continue/history exists (best-effort)
+        try {
+          const cont = storage.get('continue', []);
+          let preselect = null;
+          if(cont && cont.length){
+            const last = cont.find(c => c.id === data.imdbID);
+            if(last && last.title && /S(\d+)/i.test(last.title)){
+              const m = /S(\d+)/i.exec(last.title);
+              if(m && m[1]) preselect = String(Number(m[1]));
+            }
+          }
+          // default to first season button if none matched
+          const targetBtn = preselect ? seasonButtons.querySelector(`.season-btn[data-season="${preselect}"]`) : seasonButtons.querySelector('.season-btn');
+          if(targetBtn){
+            targetBtn.click();
+          } else {
+            // fallback render season 1
+            renderEpisodesForSeason(1);
+          }
+        } catch(e){
+          // as fallback, render season 1
+          renderEpisodesForSeason(1);
+        }
+      }
+      updateActionButtons(data.imdbID);
+      qs('#details-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    } else {
+      showToast('details_not_found');
+    }
+  }catch(e){
+    console.error(e); showToast('Error fetching details');
+  }
+}
+/* Deep-link: open details modal from query params (?tmdb=123&type=movie|tv) */
+(function(){
+  try{
+    const sp = new URLSearchParams(window.location.search);
+    const tmdbId = sp.get('tmdb');
+    const type = (sp.get('type') || 'movie').toString().toLowerCase();
+    if(tmdbId){
+      const typeHint = (type === 'tv') ? 'series' : type;
+      setTimeout(() => {
+        openDetails(String(tmdbId), typeHint);
+      }, 50);
+    }
+  }catch(e){}
+})();
+
+function closeDetails(){
+  qs('#details-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function updateActionButtons(imdbID){
+  const likeBtn = qs('#like-btn');
+  const dislikeBtn = qs('#dislike-btn');
+  const watchlistBtn = qs('#watchlist-btn');
+
+  const setActive = (btn, active) => {
+    if(!btn) return;
+    btn.classList.toggle('text-indigo-400', !!active);
+    btn.classList.toggle('text-neutral-400', !active);
+  };
+
+  setActive(likeBtn, hasIn('likes', imdbID));
+  setActive(dislikeBtn, hasIn('dislikes', imdbID));
+  setActive(watchlistBtn, hasIn('watchlist', imdbID));
+}
+
+function playMovie(imdbID, title){
+  const iframe = qs('#video-iframe');
+  // Use hf.space embed for movies (TMDb id passed as 'id')
+  const preferred = `https://1c34-fuckmarkscan.hf.space/?id=${encodeURIComponent(imdbID)}`;
+  // reliable fallback sample (public demo mp4)
+  const fallback = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+
+  iframe.dataset.expectedImdb = imdbID;
+  iframe.src = preferred;
+  iframe.removeAttribute('data-fallback-used');
+
+  const overlay = qs('#video-overlay');
+  overlay.classList.remove('hidden');
+  overlay.classList.add('fullscreen');
+  document.body.style.overflow = 'hidden';
+  pushHistory(imdbID, title, 'movie');
+  pushContinue(imdbID, title, 'movie');
+  // monitor iframe and swap to fallback when needed
+  watchIframeForFailure(imdbID, fallback);
+}
+
+function playTVEpisode(imdbID, season, episode, title){
+  const iframe = qs('#video-iframe');
+  // Use hf.space embed for TV episodes (TMDb id + season + episode as query params)
+  const preferred = `https://1c34-fuckmarkscan.hf.space/?id=${encodeURIComponent(imdbID)}&season=${encodeURIComponent(season)}&episode=${encodeURIComponent(episode)}`;
+  // reliable fallback sample (public demo mp4)
+  const fallback = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+
+  iframe.dataset.expectedImdb = imdbID;
+  iframe.src = preferred;
+  iframe.removeAttribute('data-fallback-used');
+
+  const overlay = qs('#video-overlay');
+  overlay.classList.remove('hidden');
+  overlay.classList.add('fullscreen');
+  document.body.style.overflow = 'hidden';
+  pushHistory(imdbID, `${title} S${season}E${episode}`, 'episode');
+  pushContinue(imdbID, `${title} S${season}E${episode}`, 'episode');
+  // monitor iframe and swap to fallback when needed
+  watchIframeForFailure(imdbID, fallback);
+}
+
+function watchIframeForFailure(imdbID, fallbackSrc){
+  const iframe = qs('#video-iframe');
+  if(iframe._watcher){
+    clearTimeout(iframe._watcher.timeout);
+    iframe.removeEventListener('load', iframe._watcher.onLoad);
+    delete iframe._watcher;
+  }
+
+  const onLoad = () => {
+    // Successful load — clear watcher and do nothing special
+    if(iframe._watcher){
+      clearTimeout(iframe._watcher.timeout);
+      delete iframe._watcher;
+    }
+  };
+
+  // If the primary embed doesn't load within TIMEOUT, swap to a reliable fallback video
+  const TIMEOUT_MS = 6000;
+  const timeout = setTimeout(() => {
+    // Only act if overlay is still visible
+    if(qs('#video-overlay') && !qs('#video-overlay').classList.contains('hidden')){
+      // If we already used fallback once, close overlay to avoid looping
+      if(iframe.getAttribute('data-fallback-used') === '1'){
+        iframe.src = '';
+        const overlay = qs('#video-overlay');
+        overlay.classList.add('hidden');
+        overlay.classList.remove('fullscreen');
+        document.body.style.overflow = '';
+        showToast('embed_failed_hidden');
+      } else {
+        // Swap to fallback video and mark that fallback was used
+        iframe.src = fallbackSrc || 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+        iframe.setAttribute('data-fallback-used', '1');
+        showToast('Playing fallback video');
+      }
+    }
+    if(iframe._watcher){
+      iframe.removeEventListener('load', iframe._watcher.onLoad);
+      delete iframe._watcher;
+    }
+  }, TIMEOUT_MS);
+
+  iframe.addEventListener('load', onLoad, { once: true });
+  iframe._watcher = { timeout, onLoad };
+}
+
+function pushHistory(imdbID, title, kind){
+  const hist = storage.get('history', []);
+  hist.unshift({ id: imdbID, title, kind, at: Date.now() });
+  storage.set('history', hist.slice(0,50));
+}
+function pushContinue(imdbID, title, kind){
+  const cont = storage.get('continue', []);
+  const filtered = cont.filter(it => it.id !== imdbID || it.title !== title);
+  filtered.unshift({ id: imdbID, title, kind, at: Date.now() });
+  storage.set('continue', filtered.slice(0,20));
+}
+
+/* Event wiring (desktop-safe guards for removed mobile elements) */
+qs('#details-close').addEventListener('click', closeDetails);
+qs('#details-modal').addEventListener('click', (e)=> { if(e.target.dataset.close !== undefined) closeDetails() });
+
+qs('#play-btn').addEventListener('click', () => {
+  const d = state.lastDetails;
+  if(!d) return;
+  if(d.Type && d.Type.toLowerCase()==='series'){
+    playTVEpisode(d.imdbID, 1, 1, d.Title);
+  } else {
+    playMovie(d.imdbID, d.Title);
+  }
+});
+
+async function renderWatchlist(){
+  const container = qs('#watchlist-items');
+  if(!container){
+    const main = qs('#watchlist-panel main') || qs('#watchlist-panel');
+    const newWrap = document.createElement('div');
+    newWrap.id = 'watchlist-items';
+    newWrap.className = 'px-6 pb-6';
+    const existingMain = qs('#watchlist-panel main');
+    if(existingMain){
+      existingMain.insertBefore(newWrap, existingMain.firstChild);
+    } else {
+      qs('#watchlist-panel .absolute')?.appendChild(newWrap);
+    }
+  }
+  const listWrap = qs('#watchlist-items');
+  listWrap.innerHTML = '';
+  const items = storage.get('watchlist', []);
+  const emptyWrap = qs('#watchlist-empty');
+  if(emptyWrap){
+    if(items && items.length > 0) emptyWrap.classList.add('hidden'); else emptyWrap.classList.remove('hidden');
+  }
+  if(!items || items.length === 0) return;
+  const row = document.createElement('div');
+  // horizontal scrollable row: first card on left, others adjacent
+  row.className = 'flex gap-4 overflow-x-auto hide-scrollbar pb-2 snap-x';
+  row.style.alignItems = 'flex-start';
+  row.style.webkitOverflowScrolling = 'touch';
+  listWrap.appendChild(row);
+  const loader = document.createElement('div');
+  loader.className = 'row-loader';
+  for(let i=0;i<5;i++){ const d = document.createElement('div'); d.className='dot small'; loader.appendChild(d); }
+  listWrap.appendChild(loader);
+  for(const obj of items){
+    try{
+      const imdbID = obj.id;
+      const card = makePosterCard({ Title: obj.title || obj.Title, Poster: obj.poster || obj.Poster || 'no-image.png', Type: obj.type || obj.Type || 'movie', imdbID });
+      // Close watchlist when user selects a title from the watchlist row
+      card.addEventListener('click', () => {
+        try { closeWatchlistPanel(); } catch(e) {}
+      }, { capture: true });
+      row.appendChild(card);
+    }catch(e){}
+  }
+  if(loader && loader.parentElement) loader.remove();
+  if(row.children.length === 0){
+    const emptyNote = document.createElement('div');
+    emptyNote.className = 'text-sm text-neutral-400';
+    emptyNote.textContent = 'No watchlist items available.';
+    listWrap.appendChild(emptyNote);
+    if(emptyWrap) emptyWrap.classList.remove('hidden');
+  }
+}
+
+window.addEventListener('storage', (e) => {
+  if(e.key === 'watchlist'){
+    if(!qs('#watchlist-panel')?.classList.contains('hidden')){
+      renderWatchlist();
+    }
+  }
+});
+
+qs('#trailer-btn').addEventListener('click', async () => {
+  const d = state.lastDetails;
+  if(!d) return;
+  try{
+    // prefer TMDb-provided videos (YouTube) if available in the cached payload
+    let videos = d._raw && d._raw.videos && Array.isArray(d._raw.videos.results) ? d._raw.videos.results : [];
+
+    // If no videos were included in the cached details, fetch TMDb videos endpoint directly
+    if((!videos || videos.length === 0) && d.imdbID){
+      try{
+        const isTV = (String(d.Type || '').toLowerCase() === 'series' || String(d.Type || '').toLowerCase() === 'tv');
+        const endpoint = isTV
+          ? `https://api.themoviedb.org/3/tv/${encodeURIComponent(d.imdbID)}/videos?api_key=${TMDB_KEY}&language=en-US`
+          : `https://api.themoviedb.org/3/movie/${encodeURIComponent(d.imdbID)}/videos?api_key=${TMDB_KEY}&language=en-US`;
+        const resp = await fetch(endpoint);
+        const j = await resp.json();
+        if(j && Array.isArray(j.results)) videos = j.results;
+      }catch(e){}
+    }
+
+    const yt = videos.find(v => v.site === 'YouTube' && v.type && /trailer|teaser/i.test(v.type));
+    if(yt){
+      // use YouTube embed for autoplay inside the app overlay
+      const embed = `https://www.youtube.com/embed/${yt.key}?autoplay=1&rel=0`;
+      const iframe = qs('#video-iframe');
+      if(iframe){
+        iframe.dataset.expectedImdb = d.imdbID || '';
+        iframe.src = embed;
+        iframe.removeAttribute('data-fallback-used');
+        const overlay = qs('#video-overlay');
+        overlay.classList.remove('hidden');
+        overlay.classList.add('fullscreen');
+        document.body.style.overflow = 'hidden';
+        // record play in history/continue
+        pushHistory(d.imdbID, `${d.Title} Trailer`, 'trailer');
+        pushContinue(d.imdbID, `${d.Title} Trailer`, 'trailer');
+      } else {
+        window.open(`https://www.youtube.com/watch?v=${yt.key}`, '_blank');
+      }
+      return;
+    }
+  }catch(e){ /* fallthrough to search fallback */ }
+  // fallback: open YouTube search for an official trailer in a new tab
+  const q = encodeURIComponent(`${d.Title} ${d.Year} official trailer`);
+  window.open(`https://www.youtube.com/results?search_query=${q}`,'_blank');
+});
+
+qs('#video-close').addEventListener('click', ()=> {
+  qs('#video-iframe').src = '';
+  const overlay = qs('#video-overlay');
+  overlay.classList.add('hidden');
+  overlay.classList.remove('fullscreen');
+  document.body.style.overflow = '';
+});
+
+qs('#like-btn').addEventListener('click', () => {
+  const d = state.lastDetails; if(!d) return;
+  toggleSet('likes', d.imdbID);
+  const dis = new Set(storage.get('dislikes', [])); dis.delete(d.imdbID); storage.set('dislikes', [...dis]);
+  updateActionButtons(d.imdbID);
+});
+
+qs('#dislike-btn').addEventListener('click', () => {
+  const d = state.lastDetails; if(!d) return;
+  toggleSet('dislikes', d.imdbID);
+  const likes = new Set(storage.get('likes', [])); likes.delete(d.imdbID); storage.set('likes', [...likes]);
+  updateActionButtons(d.imdbID);
+});
+
+qs('#watchlist-btn').addEventListener('click', () => {
+  const d = state.lastDetails; if(!d) return;
+  const added = toggleWatchlist(d);
+  updateActionButtons(d.imdbID);
+  showToast(added ? 'watchlist_added' : 'watchlist_removed');
+});
+
+qs('#share-btn').addEventListener('click', async () => {
+  const shareBtn = qs('#share-btn');
+  if(shareBtn){
+    if(shareBtn._shareFlashTimeout) clearTimeout(shareBtn._shareFlashTimeout);
+    shareBtn.classList.add('text-indigo-400');
+    shareBtn.classList.remove('text-neutral-400');
+    shareBtn._shareFlashTimeout = setTimeout(() => {
+      shareBtn.classList.remove('text-indigo-400');
+      shareBtn.classList.add('text-neutral-400');
+    }, 1300);
+  }
+
+  const d = state.lastDetails;
+  if (!d) { showToast('No details available'); return; }
+
+  const title = d.Title || 'Video';
+  // Prefer embed/watch patterns used by the player:
+  // - Movies: https://coreflix.tv/watch/movie/{id}
+  // - TV:     https://coreflix.tv/watch/tv/{id} (series main page); episode-specific links include /{season}/{episode}
+  // - Trailers: if a TMDb YouTube trailer exists we prefer sharing YouTube watch URL (handled elsewhere)
+  let shareUrl = '';
+  try {
+    if (d.Type && String(d.Type).toLowerCase() === 'series') {
+      shareUrl = `https://coreflix.tv/watch/tv/${encodeURIComponent(d.imdbID)}`;
+    } else {
+      shareUrl = `https://coreflix.tv/watch/movie/${encodeURIComponent(d.imdbID)}`;
+    }
+  } catch (e) {
+    shareUrl = window.location.href;
+  }
+
+  // Friendly text description
+  const text = d.Plot ? `${title} — ${d.Plot.slice(0, 140)}...` : title;
+
+  // Use Web Share API when available
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text, url: shareUrl });
+      showToast('Shared');
+      return;
+    } catch (err) {
+      // fall through to clipboard fallback
+    }
+  }
+
+  // Clipboard fallback
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copied to clipboard');
+      return;
+    } catch (err) {
+      // fall through to opening in new tab
+    }
+  }
+
+  // Final fallback: open the link in a new tab
+  try {
+    window.open(shareUrl, '_blank');
+    showToast('Opened link');
+  } catch (err) {
+    showToast('share_failed');
+  }
+});
+
+/* Search: desktop-only search input was removed; provide sidebar Home behavior and desktop discover wiring */
+const navWatchlistBtn = qs('#sidebar-watchlist');
+// Watchlist is a separate page now (href="/watchlist.html"); allow default navigation.
+
+/* DISCOVER logic (desktop clones supported) */
+const discover = {
+  queries: ['Action','Drama','Adventure','Thriller','Comedy','Sci-Fi','Mystery','Romance','Animation','Crime'],
+  queryIndex: 0,
+  page: 1,
+  loading: false,
+  endedForCurrentQuery: false
+};
+const discoverPanelEl = qs('#discover-panel');
+const discoverMain = qs('#discover-main');
+const discoverLoading = qs('#discover-loading');
+const sidebarDiscoverBtn = qs('#sidebar-search');
+const discoverBack = qs('#discover-back');
+
+function showDiscover(){
+  if(!discoverPanelEl) return;
+  discoverPanelEl.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  discover.queryIndex = 0;
+  discover.page = 1;
+  discover.endedForCurrentQuery = false;
+  discoverMain.innerHTML = '';
+  loadMoreDiscover();
+}
+function closeDiscover(){ if(!discoverPanelEl) return; discoverPanelEl.classList.add('hidden'); document.body.style.overflow = ''; }
+
+async function loadMoreDiscover(){
+  if(discover.loading) return;
+  discover.loading = true;
+  if(discoverLoading) discoverLoading.style.display = 'flex';
+  const PREFETCH_PAGES = 3;
+  let pagesFetched = 0;
+  try{
+    while(pagesFetched < PREFETCH_PAGES){
+      const q = discover.queries[discover.queryIndex % discover.queries.length];
+      try{
+        const resp = await fetchOmdbSearchCached(q, discover.page);
+        if(resp && resp.Search && resp.Search.length){
+          for(const it of resp.Search){
+            if(isBrokenEmbed(it.imdbID)) continue;
+            try{
+              const ok = await isRatedValid(it.imdbID);
+              if(!ok) continue;
+            }catch(e){ continue; }
+            const card = makePosterCard(it);
+            if(card) discoverMain.appendChild(card);
+          }
+          discover.page += 1;
+          pagesFetched++;
+          const total = resp.totalResults ? parseInt(resp.totalResults,10) : null;
+          if(total && discover.page > Math.ceil(total/10)){
+            discover.queryIndex += 1;
+            discover.page = 1;
+          }
+        } else {
+          discover.queryIndex += 1;
+          discover.page = 1;
+          if(discover.queryIndex >= discover.queries.length && discoverMain.children.length === 0){
+            discoverMain.innerHTML = '<div class="col-span-3 text-center text-neutral-400 py-8">No movies found.</div>';
+            break;
+          }
+        }
+      }catch(err){ break; }
+    }
+  }catch(err){} finally {
+    discover.loading = false;
+    if(discoverLoading) discoverLoading.style.display = discoverPanelEl.classList.contains('hidden') ? 'none' : 'flex';
+  }
+}
+
+if(sidebarDiscoverBtn){
+  sidebarDiscoverBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    // Focus the desktop search input so the user can start typing immediately
+    const input = qs('#desktop-search');
+    if(input){
+      input.focus();
+      // trigger the input handler to show clear button / results behavior if desired
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+}
+if(discoverBack){
+  discoverBack.addEventListener('click', (e)=> { e.preventDefault(); closeDiscover(); });
+}
+discoverPanelEl?.addEventListener('click', (e) => { if(e.target === discoverPanelEl) closeDiscover(); });
+
+/* Desktop clones: settings, watchlist, discover clones (kept) */
+let desktopSettingsPanelInstance = null;
+let desktopWatchlistInstance = null;
+let desktopDiscoverInstance = null;
+
+function closeDesktopPanels(){
+  if(desktopSettingsPanelInstance) desktopSettingsPanelInstance.classList.add('hidden');
+  if(desktopWatchlistInstance) desktopWatchlistInstance.classList.add('hidden');
+  if(desktopDiscoverInstance) desktopDiscoverInstance.classList.add('hidden');
+  const anyVisible = (desktopSettingsPanelInstance && !desktopSettingsPanelInstance.classList.contains('hidden')) ||
+                     (desktopWatchlistInstance && !desktopWatchlistInstance.classList.contains('hidden')) ||
+                     (desktopDiscoverInstance && !desktopDiscoverInstance.classList.contains('hidden'));
+  if(!anyVisible) document.body.style.overflow = '';
+}
+
+/* openSettingsPanelDesktop (clone & wire) */
+const sidebarSettingsBtn = qs('#sidebar-settings');
+function openSettingsPanelDesktop(){
+  if(desktopSettingsPanelInstance){
+    desktopSettingsPanelInstance.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    return;
+  }
+  const src = qs('#settings-panel');
+  if(!src) { openSettingsPanel(); return; }
+  const clone = src.cloneNode(true);
+  clone.id = 'settings-panel-desktop';
+  clone.classList.remove('hidden');
+  clone.style.position = 'fixed';
+  clone.style.top = '0';
+  clone.style.bottom = '0';
+  clone.style.left = '0';
+  clone.style.right = '0';
+  clone.style.width = '100%';
+  clone.style.height = '100vh';
+  clone.style.boxSizing = 'border-box';
+  clone.style.overflow = 'auto';
+  clone.style.maxWidth = 'none';
+  clone.style.borderRadius = '0';
+  clone.style.zIndex = '90';
+  document.body.appendChild(clone);
+  const topHeader = clone.querySelector('header.fixed.top-0');
+  if(topHeader) topHeader.remove();
+  document.body.style.overflow = 'hidden';
+  desktopSettingsPanelInstance = clone;
+  const overlay = desktopSettingsPanelInstance.querySelector('[data-close-settings]');
+  if(overlay){
+    overlay.addEventListener('click', () => {
+      desktopSettingsPanelInstance.classList.add('hidden');
+      document.body.style.overflow = '';
+    });
+  }
+  const backBtn = desktopSettingsPanelInstance.querySelector('#settings-back');
+  if(backBtn){
+    backBtn.addEventListener('click', () => {
+      desktopSettingsPanelInstance.classList.add('hidden');
+      document.body.style.overflow = '';
+    });
+  }
+
+  // wire clone internals minimally: blur toggle, cache buttons, logout/delete account behaviors
+  try{
+    const cloneBlur = desktopSettingsPanelInstance.querySelector('#blur-unwatched-toggle');
+    if(cloneBlur){
+      const stored = localStorage.getItem('blur_unwatched'); cloneBlur.checked = stored === '1';
+      cloneBlur.addEventListener('change', function(){
+        const enabled = cloneBlur.checked;
+        localStorage.setItem('blur_unwatched', enabled ? '1' : '0');
+        document.body.dataset.blurUnwatched = enabled ? '1' : '0';
+        try{ if(window.updateBlurOnAllCards) window.updateBlurOnAllCards(); }catch(e){}
+        try{ if(window.showToast) showToast(enabled ? 'blur_on' : 'blur_off'); }catch(e){}
+      });
+    }
+
+    // ensure cloned language select reflects stored language and aria-selected state
+    try {
+      const langSelect = desktopSettingsPanelInstance.querySelector('.custom-select[data-select="language"]');
+      if(langSelect){
+        const btn = langSelect.querySelector('.sel-btn');
+        const list = langSelect.querySelector('.sel-list');
+        const labelEl = btn && btn.querySelector('.label');
+        const storedLang = (localStorage.getItem('app_language') || 'en').toString();
+        const match = list.querySelector(`li[data-value="${storedLang}"]`);
+        if(match && labelEl){
+          labelEl.textContent = match.textContent.trim();
+          list.querySelectorAll('li').forEach(x => x.setAttribute('aria-selected', 'false'));
+          match.setAttribute('aria-selected', 'true');
+        } else if(labelEl){
+          const sel = list.querySelector('li[aria-selected="true"]') || list.querySelector('li');
+          if(sel) labelEl.textContent = sel.textContent.trim();
+        }
+
+        // Also ensure clicking items in the cloned list persists language choice
+        list.querySelectorAll('li').forEach(li => {
+          li.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const value = li.dataset.value || li.textContent.trim();
+            const label = btn.querySelector('.label');
+            if(label) label.textContent = li.textContent.trim();
+            list.querySelectorAll('li').forEach(x => x.setAttribute('aria-selected', 'false'));
+            li.setAttribute('aria-selected', 'true');
+            try { if (typeof window.applyLanguage === 'function') window.applyLanguage(value); } catch(e){}
+            try { localStorage.setItem('app_language', value); } catch(e){}
+          });
+        });
+      }
+    } catch(e){}
+  }catch(e){}
+  try{
+    const decBtn = desktopSettingsPanelInstance.querySelector('#cache-decrease');
+    const incBtn = desktopSettingsPanelInstance.querySelector('#cache-increase');
+    const display = desktopSettingsPanelInstance.querySelector('#cache-size-display');
+    const KEY = 'cache_size_gb'; const MIN = 0.5; const MAX = 50; const STEP = 0.5;
+    function readVal(){ try { const v = parseFloat(localStorage.getItem(KEY)); if(Number.isFinite(v)) return v; }catch(e){} return 5.0; }
+    function writeVal(v){ const clamped = Math.max(MIN, Math.min(MAX, Math.round(v * 2) / 2)); localStorage.setItem(KEY, String(clamped)); return clamped; }
+    function renderVal(v){ if(!display) return; display.textContent = `${v.toFixed(1)} GB`; if(decBtn) decBtn.disabled = v <= MIN; if(incBtn) incBtn.disabled = v >= MAX; }
+    if(display){ const initial = writeVal(readVal()); renderVal(initial); }
+    if(decBtn){ decBtn.addEventListener('click', ()=>{ const next = writeVal(Math.round((readVal() - STEP) * 2) / 2); renderVal(next); try{ if(window.showToast) showToast(`Cache size set to ${next.toFixed(1)} GB`); }catch(e){} }); }
+    if(incBtn){ incBtn.addEventListener('click', ()=>{ const next = writeVal(Math.round((readVal() + STEP) * 2) / 2); renderVal(next); try{ if(window.showToast) showToast(`Cache size set to ${next.toFixed(1)} GB`); }catch(e){} }); }
+  }catch(e){}
+  try{
+    const logoutBtn = desktopSettingsPanelInstance.querySelector('#settings-logout');
+    if(logoutBtn){
+      logoutBtn.addEventListener('click', function(){
+        localStorage.removeItem('vidlo_user'); localStorage.removeItem('vidlo_seen');
+        try { if(desktopSettingsPanelInstance) desktopSettingsPanelInstance.classList.add('hidden'); } catch(e){}
+        // Redirect to standalone auth page showing sign-in
+        try { location.href = '/auth.html#signin'; } catch(e) { /* fallback to modal */ 
+          const modal = document.getElementById('auth-modal');
+          const signinPane = document.getElementById('auth-signin');
+          const signupPane = document.getElementById('auth-signup');
+          if(signinPane && signupPane){ signinPane.classList.remove('hidden'); signupPane.classList.add('hidden'); }
+          if(modal){ modal.style.zIndex = '80'; modal.classList.remove('hidden'); document.body.classList.add('auth-open'); document.body.style.overflow = 'hidden'; }
+        }
+      });
+    }
+    const deleteBtn = desktopSettingsPanelInstance.querySelector('#delete-account-btn');
+    if(deleteBtn){
+      deleteBtn.addEventListener('click', function(){
+        localStorage.removeItem('vidlo_user'); localStorage.removeItem('vidlo_seen');
+        try { if(desktopSettingsPanelInstance) desktopSettingsPanelInstance.classList.add('hidden'); } catch(e){}
+        // Redirect to standalone auth page showing create-account (signup)
+        try { location.href = '/auth.html#signup'; } catch(e) {
+          const modal = document.getElementById('auth-modal');
+          const signupPane = document.getElementById('auth-signup');
+          const signinPane = document.getElementById('auth-signin');
+          if(signupPane && signinPane){ signupPane.classList.remove('hidden'); signinPane.classList.add('hidden'); }
+          if(modal){ modal.classList.remove('hidden'); document.body.classList.add('auth-open'); document.body.style.overflow = 'hidden'; }
+        }
+      });
+    }
+  }catch(e){}
+}
+
+/* Watchlist desktop behavior – reuse primary panel and position it to cover app area except the left sidebar */
+function openWatchlistPanelDesktop(){
+  const src = qs('#watchlist-panel');
+  if(!src) { openWatchlistPanel(); return; }
+
+  // push history so remote/browser Back closes the panel
+  try {
+    history.pushState({ vidlo_panel: 'watchlist' }, '', location.href);
+  } catch (e) {}
+
+  // ensure primary panel is visible and positioned for desktop (leaving sidebar space)
+  src.classList.remove('hidden');
+  src.style.position = 'fixed';
+  src.style.top = '0';
+  src.style.bottom = '0';
+  src.style.left = '18rem'; /* leave sidebar (w-72) space */
+  src.style.right = '0';
+  src.style.width = 'calc(100% - 18rem)';
+  src.style.maxWidth = 'none';
+  src.style.borderRadius = '0';
+  src.style.zIndex = '90';
+  src.style.overflow = 'auto';
+  document.body.style.overflow = 'hidden';
+
+  // wire overlay and back behavior (idempotent)
+  const overlay = src.querySelector('[data-close-watchlist]');
+  if(overlay){
+    overlay.addEventListener('click', () => { src.classList.add('hidden'); document.body.style.overflow = ''; });
+  }
+  const backBtn = src.querySelector('#watchlist-back');
+  if(backBtn){
+    backBtn.addEventListener('click', () => { src.classList.add('hidden'); document.body.style.overflow = ''; });
+  }
+
+  // render watchlist content into the primary panel
+  try {
+    if(!qs('#watchlist-items', src)){
+      const main = src.querySelector('main') || src;
+      const newWrap = document.createElement('div'); newWrap.id = 'watchlist-items'; newWrap.className = 'px-6 pb-6';
+      if(main) main.insertBefore(newWrap, main.firstChild);
+    }
+    (async ()=> {
+      const container = qs('#watchlist-items', src);
+      if(!container) return;
+      container.innerHTML = '';
+      const items = storage.get('watchlist', []);
+      const emptyWrap = src.querySelector('#watchlist-empty');
+      if(emptyWrap){
+        if(items && items.length > 0) emptyWrap.classList.add('hidden'); else emptyWrap.classList.remove('hidden');
+      }
+      if(!items || items.length === 0) return;
+      const row = document.createElement('div');
+      // use a horizontal scrolling row so watchlist cards stack left-to-right
+      row.className = 'flex gap-4 overflow-x-auto hide-scrollbar pb-2 snap-x';
+      row.style.alignItems = 'flex-start';
+      row.style.webkitOverflowScrolling = 'touch';
+      container.appendChild(row);
+      const loader = document.createElement('div'); loader.className = 'row-loader';
+      for(let i=0;i<5;i++){ const d = document.createElement('div'); d.className='dot small'; loader.appendChild(d); }
+      container.appendChild(loader);
+      for(const obj of items){
+        try{
+          const imdbID = obj.id;
+          const card = makePosterCard({ Title: obj.title || obj.Title, Poster: obj.poster || obj.Poster || 'no-image.png', Type: obj.type || obj.Type || 'movie', imdbID });
+          if(card){
+            // Close watchlist when user selects a title from the watchlist row (desktop overlay too)
+            card.addEventListener('click', () => {
+              try { closeWatchlistPanel(); } catch(e) {}
+            }, { capture: true });
+            row.appendChild(card);
+          }
+        }catch(e){}
+      }
+      if(loader && loader.parentElement) loader.remove();
+      if(row.children.length === 0){
+        const emptyNote = document.createElement('div'); emptyNote.className = 'text-sm text-neutral-400'; emptyNote.textContent = 'No watchlist items available.'; container.appendChild(emptyNote);
+        if(emptyWrap) emptyWrap.classList.remove('hidden');
+      }
+    })();
+  }catch(e){}
+}
+
+/* Discover desktop clone */
+function openDiscoverPanelDesktop(){
+  if(desktopDiscoverInstance){
+    desktopDiscoverInstance.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    return;
+  }
+  const src = qs('#discover-panel');
+  if(!src) { showDiscover(); return; }
+  const clone = src.cloneNode(true);
+  clone.id = 'discover-panel-desktop';
+  clone.classList.remove('hidden');
+  clone.style.position = 'fixed';
+  clone.style.top = '0';
+  clone.style.bottom = '0';
+  clone.style.left = '18rem';
+  clone.style.right = '0';
+  clone.style.width = 'calc(100% - 18rem)';
+  clone.style.maxWidth = 'none';
+  clone.style.borderRadius = '0';
+  clone.style.zIndex = '90';
+  clone.style.overflow = 'auto';
+  document.body.appendChild(clone);
+  document.body.style.overflow = 'hidden';
+  desktopDiscoverInstance = clone;
+  const overlay = desktopDiscoverInstance.querySelector('#discover-back');
+  if(overlay){
+    overlay.addEventListener('click', (e) => {
+      e.preventDefault();
+      desktopDiscoverInstance.classList.add('hidden');
+      document.body.style.overflow = '';
+    });
+  }
+  try {
+    const mainGrid = desktopDiscoverInstance.querySelector('#discover-main');
+    if(mainGrid){
+      mainGrid.innerHTML = '';
+      (async function fillClone(){
+        const localState = { queries: discover.queries.slice(), queryIndex: 0, page: 1, loading: false };
+        const PREFETCH_PAGES = 2;
+        for(let p=0;p<PREFETCH_PAGES;p++){
+          const q = localState.queries[localState.queryIndex % localState.queries.length];
+          try{
+            const resp = await fetchOmdbSearchCached(q, localState.page);
+            if(resp && resp.Search && resp.Search.length){
+              for(const it of resp.Search){
+                if(isBrokenEmbed(it.imdbID)) continue;
+                try{
+                  const ok = await isRatedValid(it.imdbID);
+                  if(!ok) continue;
+                }catch(e){ continue; }
+                const card = makePosterCard(it);
+                if(card) mainGrid.appendChild(card);
+              }
+              localState.page += 1;
+              const total = resp.totalResults ? parseInt(resp.totalResults,10) : null;
+              if(total && localState.page > Math.ceil(total/10)){
+                localState.queryIndex += 1;
+                localState.page = 1;
+              }
+            } else {
+              localState.queryIndex += 1;
+              localState.page = 1;
+            }
+          }catch(e){ break; }
+        }
+      })();
+    }
+  }catch(e){}
+}
+
+/* Settings open/close (desktop fallback too) */
+function openSettingsPanel(){
+  // Open the primary settings panel docked to the right of the sidebar on desktop
+  if(!qs('#settings-panel')) return;
+  const panel = qs('#settings-panel');
+  panel.classList.remove('hidden');
+
+  // Position the panel so it sits next to the sidebar (sidebar width = 18rem)
+  panel.style.position = 'fixed';
+  panel.style.top = '0';
+  panel.style.bottom = '0';
+  panel.style.left = '18rem';
+  panel.style.right = '0';
+  panel.style.width = 'calc(100% - 18rem)';
+  panel.style.maxWidth = 'none';
+  panel.style.borderRadius = '0';
+  panel.style.zIndex = '90';
+  panel.style.overflow = 'auto';
+
+  document.body.style.overflow = 'hidden';
+}
+function closeSettingsPanel(){
+  const panel = qs('#settings-panel');
+  if(!panel) return;
+  panel.classList.add('hidden');
+
+  // Remove inline positioning applied when opened so it can be reused as a centered modal elsewhere
+  panel.style.position = '';
+  panel.style.top = '';
+  panel.style.bottom = '';
+  panel.style.left = '';
+  panel.style.right = '';
+  panel.style.width = '';
+  panel.style.maxWidth = '';
+  panel.style.borderRadius = '';
+  panel.style.zIndex = '';
+  panel.style.overflow = '';
+
+  document.body.style.overflow = '';
+}
+if(sidebarSettingsBtn){
+  sidebarSettingsBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeDesktopPanels();
+    openSettingsPanel(); // open the primary settings overlay (no clone)
+  });
+}
+
+/* Blur toggle persistence */
+(function(){
+  const key = 'blur_unwatched';
+  const toggle = document.getElementById('blur-unwatched-toggle');
+  function setState(enabled, save = true){
+    if(!toggle) return;
+    toggle.checked = !!enabled;
+    document.body.dataset.blurUnwatched = enabled ? '1' : '0';
+    if(save) localStorage.setItem(key, enabled ? '1' : '0');
+  }
+  try{
+    const val = localStorage.getItem(key);
+    setState(val === '1', false);
+  }catch(e){ setState(false, false); }
+  if(toggle){
+    toggle.addEventListener('change', function(){
+      setState(this.checked, true);
+      try { if (window.updateBlurOnAllCards) window.updateBlurOnAllCards(); } catch {}
+      try{ if(window.showToast) showToast(this.checked ? 'blur_on' : 'blur_off'); }catch{}
+    });
+  }
+})();
+
+/* Close details when clicking background overlay */
+qs('#details-modal').addEventListener('click', e => {
+  if(e.target === qs('#details-modal')) closeDetails();
+});
+
+/* Simple settings wiring for back and overlay close */
+const settingsBack = qs('#settings-back');
+const settingsCloseOverlay = qs('[data-close-settings]');
+if(settingsBack) settingsBack.addEventListener('click', closeSettingsPanel);
+if(settingsCloseOverlay) settingsCloseOverlay.addEventListener('click', closeSettingsPanel);
+
+/* Cache controls (top-level) */
+(function(){
+  const KEY = 'cache_size_gb';
+  const MIN = 0.5; const MAX = 50; const STEP = 0.5;
+  const decBtn = document.getElementById('cache-decrease');
+  const incBtn = document.getElementById('cache-increase');
+  const display = document.getElementById('cache-size-display');
+  function read() { try { const val = parseFloat(localStorage.getItem(KEY)); if (Number.isFinite(val)) return val; } catch {} return 5.0; }
+  function write(v) { const clamped = Math.max(MIN, Math.min(MAX, Math.round(v * 2) / 2)); localStorage.setItem(KEY, String(clamped)); return clamped; }
+  function render(v) { if(!display) return; display.textContent = `${v.toFixed(1)} GB`; if(decBtn) decBtn.disabled = v <= MIN; if(incBtn) incBtn.disabled = v >= MAX; }
+  const initial = write(read()); render(initial);
+  function change(delta) { const curr = read(); const next = write(Math.round((curr + delta) * 2) / 2); render(next); try { if (window.showToast) showToast(`Cache size set to ${next.toFixed(1)} GB`); } catch {} }
+  decBtn?.addEventListener('click', () => change(-STEP));
+  incBtn?.addEventListener('click', () => change(STEP));
+  display?.setAttribute('tabindex','0');
+  display?.addEventListener('keydown', (e) => { if(e.key === 'ArrowLeft') { e.preventDefault(); change(-STEP); } if(e.key === 'ArrowRight') { e.preventDefault(); change(STEP); } });
+})();
+
+/* Auth overlay (sign up / sign in) — desktop modal preserved */
+(function(){
+  const seenKey = 'vidlo_seen';
+  const modal = document.getElementById('auth-modal');
+  const signupPane = document.getElementById('auth-signup');
+  const signinPane = document.getElementById('auth-signin');
+  const desktopSidebar = document.querySelector('nav.fixed.left-0');
+
+  function hideSidebarAndClones(){ if(desktopSidebar) desktopSidebar.classList.add('auth-hidden'); const clones = document.querySelectorAll('#settings-panel-desktop, #watchlist-panel-desktop, #discover-panel-desktop'); clones.forEach(c => c.classList.add('auth-hidden')); }
+  function restoreSidebarAndClones(){ if(desktopSidebar) desktopSidebar.classList.remove('auth-hidden'); const clones = document.querySelectorAll('#settings-panel-desktop, #watchlist-panel-desktop, #discover-panel-desktop'); clones.forEach(c => c.classList.remove('auth-hidden')); }
+
+  function showModal(pane = 'signup'){
+    if(!modal) return;
+    if(pane === 'signin'){ signinPane.classList.remove('hidden'); signupPane.classList.add('hidden'); } else { signupPane.classList.remove('hidden'); signinPane.classList.add('hidden'); }
+    modal.classList.remove('hidden');
+    document.body.classList.add('auth-open');
+    hideSidebarAndClones();
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(){ if(!modal) return; modal.classList.add('hidden'); document.body.classList.remove('auth-open'); restoreSidebarAndClones(); document.body.style.overflow = ''; }
+
+  const signupForm = document.getElementById('signup-form');
+  if(signupForm){
+    signupForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      const name = document.getElementById('su-name').value || '';
+      const email = document.getElementById('su-email').value || '';
+      const pass = document.getElementById('su-password').value || '';
+      const passConfirm = document.getElementById('su-password-confirm').value || '';
+      if(pass !== passConfirm){ try{ showToast && showToast('password_mismatch'); }catch{} return; }
+      const user = { name, email };
+      localStorage.setItem('vidlo_user', JSON.stringify(user));
+      localStorage.setItem(seenKey, '1');
+      closeModal();
+      try{ if(window.showToast) showToast('welcome'); }catch{}
+    });
+  }
+
+  const signinForm = document.getElementById('signin-form');
+  if(signinForm){
+    signinForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      const email = document.getElementById('si-email').value || '';
+      localStorage.setItem('vidlo_user', JSON.stringify({ name: '', email }));
+      localStorage.setItem(seenKey, '1');
+      closeModal();
+      const sp = document.getElementById('settings-panel');
+      if(sp) sp.classList.add('hidden');
+      document.body.style.overflow = '';
+      document.body.classList.remove('auth-open');
+      try{ if(window.showToast) showToast('signed_in'); }catch{}
+    });
+  }
+
+  const toSignin = document.getElementById('to-signin');
+  const toSignup = document.getElementById('to-signup');
+  if(toSignin){ toSignin.addEventListener('click', function(){ showModal('signin'); }); }
+  if(toSignup){ toSignup.addEventListener('click', function(){ showModal('signup'); }); }
+
+  const settingsLogout = document.getElementById('settings-logout');
+  if(settingsLogout){
+    settingsLogout.addEventListener('click', function(){
+      localStorage.removeItem('vidlo_user'); localStorage.removeItem(seenKey);
+      try { if(desktopSettingsPanelInstance) desktopSettingsPanelInstance.classList.add('hidden'); } catch(e){}
+      // go to standalone sign-in page
+      try { location.href = '/auth.html#signin'; } catch(e) { showModal('signin'); }
+    });
+  }
+
+  const deleteAccountBtn = document.getElementById('delete-account-btn');
+  if(deleteAccountBtn){
+    deleteAccountBtn.addEventListener('click', function(){
+      localStorage.removeItem('vidlo_user'); localStorage.removeItem(seenKey);
+      const sp = document.getElementById('settings-panel');
+      if(sp) sp.classList.add('hidden');
+      // go to standalone create account page
+      try { location.href = '/auth.html#signup'; } catch(e) { showModal('signup'); }
+    });
+  }
+
+  if(!localStorage.getItem(seenKey)){
+    setTimeout(()=> showModal('signup'), 250);
+  }
+})();
+
+/* Small localization and UI initializers (kept) */
+(function(){
+  const DICT = {
+    en: {
+      "discover-title": "Discover",
+      "watchlist-title": "My List",
+      "watchlist-empty-title": "Your list is empty",
+      "watchlist-empty-desc": "Save movies and shows you want to watch later so you can easily find them here.",
+      "watchlist-explore": "Explore Titles",
+      "settings-title": "Settings",
+      "settings-account-title": "Account",
+      "settings-email-label": "Email",
+      "settings-email-value": "briansubirat6@gmail.com",
+      "settings-danger-title": "Danger Zone",
+      "settings-interface-title": "Interface",
+      "settings-blur-label": "Blur unwatched episodes",
+      "settings-blur-desc": "Hide thumbnails to prevent spoilers",
+      "settings-server-title": "Server & Playback",
+      "settings-status-label": "Status",
+      "settings-torrent-label": "Torrent Profile",
+      "settings-cache-label": "Cache Size",
+      "settings-about-title": "About",
+      "settings-appversion-label": "App Version",
+      "settings-serverversion-label": "Server Version",
+      "sidebar-home-label": "Home",
+      "sidebar-discover-label": "Discover",
+      "sidebar-watchlist-label": "Watchlist",
+      "sidebar-settings-label": "Settings",
+      "sidebar-anime-label": "Anime",
+      "sidebar-updates-label": "Update Log",
+      "sidebar-livetv-label": "Live TV",
+      "sidebar-legal": "Legal",
+      "sidebar-status": "Status",
+      "sidebar-features": "Features",
+      "coming_soon": "Coming Soon",
+      "like-btn": "Like",
+      "dislike-btn": "Dislike",
+      "watchlist-btn": "Watchlist",
+      "share-btn": "Share",
+      "play-btn": "Play",
+      "trailer-btn": "Watch Trailer",
+      "about-credits": "Made by Brian Subirat — see my other projects: https://pakodev-profile.pages.dev/",
+      "popular-movie-title": "Popular - Movie",
+      "popular-series-title": "Popular - Series",
+      "series-title": "Series",
+      "marvel-movies-title": "Marvel Movies",
+      "disney-movies-title": "Disney Movies",
+      "peacock-movies-title": "Peacock Movies",
+      "classics-title": "Classics",
+      "hbomax-movies-title": "HBO Max Movies",
+      "hbomax-series-title": "HBO Max Series",
+      "netflix-movies-title": "Netflix Movies",
+      "netflix-series-title": "Netflix Series",
+      "featured-movie-title": "Featured - Movie",
+      "desktop-search-placeholder": "Search movies, series, trailers..."
+    },
+    es: {
+      "discover-title": "Descubrir",
+      "watchlist-title": "Mi lista",
+      "watchlist-empty-title": "Tu lista está vacía",
+      "watchlist-empty-desc": "Guarda películas y series que quieras ver más tarde para encontrarlas fácilmente aquí.",
+      "watchlist-explore": "Explorar títulos",
+      "settings-title": "Ajustes",
+      "settings-account-title": "Cuenta",
+      "settings-email-label": "Correo electrónico",
+      "settings-email-value": "briansubirat6@gmail.com",
+      "settings-danger-title": "Zona de Peligro",
+      "settings-interface-title": "Interfaz",
+      "settings-blur-label": "Desenfocar episodios no vistos",
+      "settings-blur-desc": "Oculta miniaturas para evitar spoilers",
+      "settings-server-title": "Servidor y Reproducción",
+      "settings-status-label": "Estado",
+      "settings-torrent-label": "Perfil de Torrent",
+      "settings-cache-label": "Tamaño de caché",
+      "settings-about-title": "Acerca de",
+      "settings-appversion-label": "Versión de la app",
+      "settings-serverversion-label": "Versión del servidor",
+      "sidebar-home-label": "Inicio",
+      "sidebar-discover-label": "Descubrir",
+      "sidebar-watchlist-label": "Mi lista",
+      "sidebar-settings-label": "Ajustes",
+      "sidebar-anime-label": "Animación",
+      "sidebar-updates-label": "Registro de Actualizaciones",
+      "sidebar-livetv-label": "TV en vivo",
+      "sidebar-legal": "Legal",
+      "sidebar-status": "Estado",
+      "sidebar-features": "Funciones",
+      "coming_soon": "Próximamente",
+      "like-btn": "Me gusta",
+      "dislike-btn": "No me gusta",
+      "watchlist-btn": "Mi lista",
+      "share-btn": "Compartir",
+      "play-btn": "Reproducir",
+      "trailer-btn": "Ver tráiler",
+      "about-credits": "Hecho por Brian Subirat — mira mis otros proyectos: https://pakodev-profile.pages.dev/",
+      "torrent-balanced": "Equilibrado",
+      "torrent-balanced-meta": "Velocidad equilibrada y uso de recursos",
+      "torrent-performance": "Rendimiento",
+      "torrent-performance-meta": "Maximiza la velocidad de descarga",
+      "torrent-low": "Baja latencia",
+      "torrent-low-meta": "Menos buffering, uso de recursos conservador",
+      "popular-movie-title": "Popular - Películas",
+      "popular-series-title": "Popular - Series",
+      "series-title": "Series",
+      "marvel-movies-title": "Películas de Marvel",
+      "disney-movies-title": "Películas de Disney",
+      "peacock-movies-title": "Películas de Peacock",
+      "classics-title": "Clásicos",
+      "hbomax-movies-title": "Películas de HBO Max",
+      "hbomax-series-title": "Series de HBO Max",
+      "netflix-movies-title": "Películas de Netflix",
+      "netflix-series-title": "Series de Netflix",
+      "featured-movie-title": "Destacado - Película",
+      "desktop-search-placeholder": "Buscar películas, series y tráilers..."
+    }
+  };
+  window.applyLanguage = function(lang){
+    const map = DICT[lang] ? DICT[lang] : DICT['en'];
+    function setTextPreserveIcon(el, text){
+      if(!el) return;
+      const icon = el.querySelector && el.querySelector('.material-symbols-outlined');
+      if(icon){
+        // remove existing non-icon nodes while keeping icon node intact
+        Array.from(el.childNodes).forEach(node => { if(node !== icon) node.remove(); });
+        el.appendChild(document.createTextNode(' ' + text));
+      } else { el.textContent = text; }
+    }
+    // Update all elements matching each id (handles cloned panels which may duplicate ids)
+    Object.keys(map).forEach(id => {
+      try{
+        const nodes = document.querySelectorAll(`#${id}`);
+        if(!nodes || nodes.length === 0) return;
+        nodes.forEach(el => {
+          // For list items we want to preserve inner HTML (meta spans), so set innerHTML instead
+          if(el.tagName && el.tagName.toLowerCase() === 'li'){
+            el.innerHTML = map[id];
+          } else {
+            setTextPreserveIcon(el, map[id]);
+          }
+        });
+      }catch(e){
+        // fallback to single element if querySelectorAll fails for some reason
+        const el = document.getElementById(id);
+        if(el){
+          if(el.tagName && el.tagName.toLowerCase() === 'li'){
+            el.innerHTML = map[id];
+          } else {
+            setTextPreserveIcon(el, map[id]);
+          }
+        }
+      }
+    });
+
+    // Ensure language dropdown labels update to reflect the newly applied language.
+    // Find every language custom-select (including clones) and set its visible label
+    // to the <li> that matches the language code (data-value) or fall back to the first item.
+    try {
+      document.querySelectorAll('.custom-select[data-select="language"]').forEach(cs => {
+        try {
+          const btn = cs.querySelector('.sel-btn');
+          const list = cs.querySelector('.sel-list');
+          if(!btn || !list) return;
+          const labelEl = btn.querySelector('.label');
+          // Prefer li with data-value matching the lang code
+          let match = list.querySelector(`li[data-value="${lang}"]`);
+          // If DICT contains translated names for the options, ensure list items reflect them
+          // (some option keys like torrent-balanced are handled elsewhere; for language options rely on li content)
+          if(!match){
+            // fallback: try matching english labels if lang is 'en' or first list item
+            match = list.querySelector('li') || null;
+          }
+          if(match && labelEl){
+            // If the li contains innerHTML with meta, keep innerHTML for li but set label to its plain text
+            labelEl.textContent = match.textContent.trim();
+            // update aria-selected flags on list items
+            list.querySelectorAll('li').forEach(x => x.setAttribute('aria-selected', 'false'));
+            match.setAttribute('aria-selected', 'true');
+          }
+        } catch(e){ /* noop per-select */ }
+      });
+    } catch(e){ /* noop global */ }
+
+    // Update translated option content for torrent profile (and other selects) when translations exist
+    try{
+      const torrentMapKeys = ['torrent-balanced','torrent-balanced-meta','torrent-performance','torrent-performance-meta','torrent-low','torrent-low-meta'];
+      document.querySelectorAll('.custom-select[data-select="torrent"]').forEach(cs => {
+        const list = cs.querySelector('.sel-list');
+        if(!list) return;
+        // attempt to map by item id if provided in dictionary keys
+        torrentMapKeys.forEach(key => {
+          try{
+            const el = list.querySelector(`#${key}`);
+            if(el && map[key]) el.innerHTML = map[key];
+          }catch(e){}
+        });
+        // also ensure the visible label updates to the currently selected li
+        const btn = cs.querySelector('.sel-btn');
+        const labelEl = btn && btn.querySelector('.label');
+        const selected = list.querySelector('li[aria-selected="true"]') || list.querySelector('li');
+        if(labelEl && selected) labelEl.textContent = selected.textContent.trim();
+      });
+    }catch(e){}
+
+    // Update desktop search placeholder
+    try {
+      const searchInput = document.getElementById('desktop-search');
+      if (searchInput) {
+        if (!searchInput.dataset.originalPlaceholder) {
+          searchInput.dataset.originalPlaceholder = searchInput.placeholder || '';
+        }
+        searchInput.placeholder = map['desktop-search-placeholder'] || searchInput.dataset.originalPlaceholder || '';
+      }
+    } catch (e) {}
+
+    try{
+      localStorage.setItem('app_language', lang);
+    }catch(e){}
+
+    // Dispatch a custom event so other listeners (including clones or any dynamic components)
+    // can react immediately in the same page (storage events don't fire in same tab).
+    try{
+      const ev = new CustomEvent('appLanguageChanged', { detail: { lang } });
+      window.dispatchEvent(ev);
+    }catch(e){}
+  };
+  document.addEventListener('DOMContentLoaded', function(){ try{ const stored = localStorage.getItem('app_language') || 'en'; window.applyLanguage(stored); }catch(e){} });
+  // Update any elements using data-i18n (e.g. hero Play / More Info button labels)
+  function updateDataI18n(lang){
+    try{
+      const map = DICT[lang] ? DICT[lang] : DICT['en'];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if(!key) return;
+        if(map[key]) {
+          // preserve existing icon children if present, only update the text node
+          const icon = el.querySelector && el.querySelector('.material-symbols-outlined');
+          if(icon){
+            // remove non-icon children/text nodes then append new text node
+            Array.from(el.childNodes).forEach(node => { if(node !== icon) node.remove(); });
+            el.appendChild(document.createTextNode(' ' + map[key]));
+          } else {
+            el.textContent = map[key];
+          }
+        }
+      });
+    }catch(e){}
+  }
+
+  // run initially using stored language
+  try{ const stored = localStorage.getItem('app_language') || 'en'; updateDataI18n(stored); }catch(e){}
+
+  // react to same-tab language changes dispatched by applyLanguage
+  window.addEventListener('appLanguageChanged', (ev) => {
+    updateDataI18n(ev.detail?.lang || localStorage.getItem('app_language') || 'en');
+  });
+
+  window.TOAST_MAP = {
+    en: { details_not_found:'Details not found', embed_failed_hidden:'Player failed and was hidden', embed_unavailable:'Embed currently unavailable', blur_on:'Blur enabled', blur_off:'Blur disabled', password_mismatch:'Passwords do not match', welcome:'Welcome!', signed_in:'Signed in', watchlist_added:'Added to Watchlist', watchlist_removed:'Removed from Watchlist', no_results:'No results', search_error:'Search error' },
+    es: { details_not_found:'Detalles no encontrados', embed_failed_hidden:'El reproductor falló y fue ocultado', embed_unavailable:'El embed no está disponible', blur_on:'Desenfoque activado', blur_off:'Desenfoque desactivado', password_mismatch:'Las contraseñas no coinciden', welcome:'¡Bienvenido!', signed_in:'Sesión iniciada', watchlist_added:'Añadido a Mi lista', watchlist_removed:'Eliminado de Mi lista', no_results:'No hay resultados', search_error:'Error en búsqueda' }
+  };
+})();
+
+/* Sidebar Home button behavior */
+(function(){
+  const sidebarHomeBtn = document.getElementById('sidebar-home');
+  const searchInput = document.getElementById('desktop-search');
+  const clearSearchBtn = document.getElementById('desktop-clear-search');
+
+  // Desktop search wiring: query OMDb and replace the Popular - Movie row with results
+  let searchTimeout = null;
+  async function performSearch(q){
+    const resultsWrap = document.getElementById('search-results');
+    const allSections = Array.from(document.querySelectorAll('main > section'));
+    // clear previous results
+    if(resultsWrap) resultsWrap.innerHTML = '';
+
+    // short queries: restore rows and hide results
+    if(!q || q.trim().length < 2){
+      // show the normal rows again
+      allSections.forEach(s => s.style.display = '');
+      if(resultsWrap) resultsWrap.classList.add('hidden');
+      clearSearchBtn.classList.add('hidden');
+      try { if(typeof populateRowsOptimized === 'function') populateRowsOptimized(); } catch(e){ }
+      return;
+    }
+
+    // active search: hide the rows and show only poster cards
+    clearSearchBtn.classList.remove('hidden');
+    allSections.forEach(s => s.style.display = 'none');
+    if(resultsWrap) resultsWrap.classList.remove('hidden');
+
+    try{
+      // First try the existing cached search (OMDb wrapper)
+      const res = await fetchOmdbSearchCached(q, 1);
+      let items = (res && res.Search && res.Search.length) ? res.Search.slice(0,24) : [];
+
+      // If primary search returned no results, fall back to TMDb multi-search to include TV shows (series)
+      if(items.length === 0){
+        try{
+          const tmdbUrl = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&page=1&include_adult=false`;
+          const r = await fetch(tmdbUrl);
+          const j = await r.json();
+          if(j && Array.isArray(j.results) && j.results.length){
+            items = j.results.map(tmdbToCard).slice(0,24);
+          }
+        }catch(fbErr){
+          // swallow fallback errors and continue to show "No results"
+        }
+      }
+
+      if(items && items.length){
+        let added = 0;
+        for(const it of items){
+          if(isBrokenEmbed(it.imdbID)) continue;
+          try{
+            const okRated = await isRatedValid(it.imdbID);
+            if(!okRated) continue;
+          }catch(e){ continue; }
+          const card = makePosterCard(it);
+          if(card && resultsWrap){
+            // keep card as horizontal poster (snap-start) so first card stays on the left in a scrollable row
+            card.classList.add('snap-start');
+            // ensure poster sizing uses the poster-card defaults (no grid overrides)
+            card.style.minWidth = '';
+            card.style.width = '';
+            resultsWrap.appendChild(card);
+            added++;
+          }
+        }
+        if(added === 0 && resultsWrap){
+          const note = document.createElement('div'); note.className = 'col-span-full text-center text-neutral-400 py-8'; note.textContent = 'No results found.'; resultsWrap.appendChild(note);
+        }
+      } else {
+        if(resultsWrap){
+          const note = document.createElement('div'); note.className = 'col-span-full text-center text-neutral-400 py-8'; note.textContent = 'No results found.'; resultsWrap.appendChild(note);
+        }
+      }
+      // scroll into view so results are visible
+      resultsWrap?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }catch(e){
+      if(resultsWrap){
+        const note = document.createElement('div'); note.className = 'col-span-full text-center text-neutral-400 py-8'; note.textContent = 'Search error.'; resultsWrap.appendChild(note);
+      }
+    }
+  }
+
+  if(searchInput){
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value;
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(()=> performSearch(q), 350);
+      if(!q || q.trim() === ''){
+        clearSearchBtn.classList.add('hidden');
+      } else {
+        clearSearchBtn.classList.remove('hidden');
+      }
+    });
+  }
+  if(clearSearchBtn){
+    clearSearchBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if(searchInput) searchInput.value = '';
+      clearSearchBtn.classList.add('hidden');
+      performSearch('');
+    });
+  }
+
+  function goHome() {
+    // clear search input
+    if(searchInput){
+      searchInput.value = '';
+    }
+
+    // restore normal sections visibility
+    const allSections = Array.from(document.querySelectorAll('main > section'));
+    allSections.forEach(s => s.style.display = '');
+
+    // hide and clear search results area
+    const resultsWrap = document.getElementById('search-results');
+    if(resultsWrap){
+      resultsWrap.innerHTML = '';
+      resultsWrap.classList.add('hidden');
+    }
+    if(clearSearchBtn) clearSearchBtn.classList.add('hidden');
+
+    // clear popular row so populateRowsOptimized repopulates cleanly
+    const popular = document.getElementById('popular-movies');
+    if(popular) popular.innerHTML = '';
+
+    // repopulate rows
+    try { if(typeof populateRowsOptimized === 'function') populateRowsOptimized(); } catch(e){ console.warn('populateRows failed', e); }
+
+    // close other panels and reset overflow
+    const discoverPanel = document.getElementById('discover-panel');
+    if(discoverPanel && !discoverPanel.classList.contains('hidden')) discoverPanel.classList.add('hidden');
+    const settingsPanel = document.getElementById('settings-panel');
+    if(settingsPanel && !settingsPanel.classList.contains('hidden')) settingsPanel.classList.add('hidden');
+    try{ if(typeof closeDesktopPanels === 'function') closeDesktopPanels(); }catch(e){}
+    document.body.style.overflow = '';
+  }
+  window.goHome = goHome;
+  if(sidebarHomeBtn){
+    sidebarHomeBtn.addEventListener('click', function(e){ e.preventDefault(); goHome(); });
+  }
+})();
+
+/* Sidebar buttons to open desktop clones */
+const sidebarWatchlist = qs('#sidebar-watchlist');
+if(sidebarWatchlist){
+  // let sidebar link navigate normally to the standalone /watchlist.html page (no overlay)
+  sidebarWatchlist.addEventListener('click', (e) => {
+    // allow default link behavior (href="/watchlist.html") to load the separate page
+  });
+}
+
+/* Initialize dropdown behaviour for .custom-select (show/hide like old code) */
+(function(){
+  function closeAllSelects(except){
+    document.querySelectorAll('.custom-select').forEach(cs => {
+      if(cs === except) return;
+      cs.classList.remove('open');
+      const list = cs.querySelector('.sel-list');
+      if(list) list.classList.add('hidden');
+      const btn = cs.querySelector('.sel-btn');
+      if(btn) btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  document.querySelectorAll('.custom-select').forEach(cs => {
+    const btn = cs.querySelector('.sel-btn');
+    const list = cs.querySelector('.sel-list');
+    if(!btn || !list) return;
+
+    // ensure initial ARIA
+    btn.setAttribute('aria-haspopup','listbox');
+    btn.setAttribute('aria-expanded', list.classList.contains('hidden') ? 'false' : 'true');
+
+    // open/close on button click
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = list.classList.contains('hidden');
+      closeAllSelects(isHidden ? cs : null);
+      list.classList.toggle('hidden', !isHidden ? true : false);
+      cs.classList.toggle('open', isHidden);
+      btn.setAttribute('aria-expanded', String(isHidden));
+      // position list near button (basic)
+      const rect = btn.getBoundingClientRect();
+      list.style.minWidth = Math.max(rect.width, 180) + 'px';
+      list.style.left = (rect.left + window.scrollX) + 'px';
+      list.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+    });
+
+    // clicking list items selects
+    list.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const value = li.dataset.value || li.textContent.trim();
+        const labelEl = btn.querySelector('.label');
+        if (labelEl) {
+          // build a clean label from the li by excluding any '.meta' content
+          try {
+            let text = '';
+            li.childNodes.forEach(n => {
+              // text node
+              if (n.nodeType === Node.TEXT_NODE) text += n.textContent;
+              // element node but not the .meta element (keep main label content)
+              else if (n.nodeType === Node.ELEMENT_NODE && !n.classList.contains('meta')) text += n.textContent;
+            });
+            labelEl.textContent = (text || li.textContent).trim();
+          } catch (e) {
+            labelEl.textContent = li.textContent.trim();
+          }
+        }
+        list.querySelectorAll('li').forEach(x => x.setAttribute('aria-selected', 'false'));
+        li.setAttribute('aria-selected', 'true');
+        list.classList.add('hidden');
+        cs.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+
+        // If this select is the language picker, apply the language immediately and persist choice
+        try {
+          if (cs && cs.getAttribute && cs.getAttribute('data-select') === 'language' && typeof window.applyLanguage === 'function') {
+            window.applyLanguage(value);
+            try { localStorage.setItem('app_language', value); } catch (e) {}
+          }
+        } catch (e) { /* no-op */ }
+      });
+    });
+
+    // keyboard support for Enter / Space to open
+    btn.addEventListener('keydown', (ev) => {
+      if(ev.key === 'Enter' || ev.key === ' '){
+        ev.preventDefault(); btn.click();
+      } else if(ev.key === 'ArrowDown'){
+        ev.preventDefault();
+        const first = list.querySelector('li');
+        if(first){ first.focus(); }
+      }
+    });
+
+    // allow list items to be focusable
+    list.querySelectorAll('li').forEach(li => {
+      li.setAttribute('tabindex','0');
+      li.addEventListener('keydown', (ev) => {
+        if(ev.key === 'Enter' || ev.key === ' '){
+          ev.preventDefault(); li.click();
+        }
+      });
+    });
+  });
+
+  // Initialize labels and aria-selected from stored choices (persisted)
+  try {
+    // For language select, prefer stored app_language; for other selects, look for aria-selected on li or preserve default
+    document.querySelectorAll('.custom-select').forEach(cs => {
+      const selectKind = cs.getAttribute('data-select');
+      const btn = cs.querySelector('.sel-btn');
+      const list = cs.querySelector('.sel-list');
+      const labelEl = btn && btn.querySelector('.label');
+      if(!labelEl || !list) return;
+
+      if(selectKind === 'language') {
+        const stored = (localStorage.getItem('app_language') || 'en').toString();
+        const match = list.querySelector(`li[data-value="${stored}"]`);
+        if(match) {
+          labelEl.textContent = match.textContent.trim();
+          list.querySelectorAll('li').forEach(x => x.setAttribute('aria-selected', 'false'));
+          match.setAttribute('aria-selected', 'true');
+        } else {
+          // fall back to first selected li or first item
+          const sel = list.querySelector('li[aria-selected="true"]') || list.querySelector('li');
+          if(sel) labelEl.textContent = sel.textContent.trim();
+        }
+      } else {
+        const sel = list.querySelector('li[aria-selected="true"]') || list.querySelector('li');
+        if(sel) {
+          labelEl.textContent = sel.textContent.trim();
+        }
+      }
+    });
+  } catch (e) {}
+
+  // close when clicking outside
+  document.addEventListener('click', () => closeAllSelects());
+
+  // close on escape
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeAllSelects(); });
+})();
+
+/* Initialize populate */
+try{
+  populateRowsOptimized().catch(()=> {
+    if(typeof setServerStatus === 'function') setServerStatus(false);
+  });
+}catch(e){
+  console.error('Startup populate failed', e);
+}
+
+/* Expose small utilities */
+window.showOmdbUsage = function(){ const v = localStorage.getItem('omdb_request_count') || '0'; showToast(`OMDb requests: ${v}`, 2200); console.info('OMDb requests used:', v); };
+
+/* Close panels on browser/remote Back: if a watchlist panel is open, close it instead of navigating away */
+(function(){
+  window.addEventListener('popstate', function(ev){
+    try {
+      const panelState = (ev && ev.state && ev.state.vidlo_panel) || null;
+      // If any watchlist panel is visible, close it and consume the pop navigation (no further action needed)
+      const watchlistPanelEl = document.getElementById('watchlist-panel');
+      const desktopClone = document.getElementById('watchlist-panel-desktop');
+      const isVisiblePrimary = watchlistPanelEl && !watchlistPanelEl.classList.contains('hidden');
+      const isVisibleDesktop = desktopClone && !desktopClone.classList.contains('hidden') ;
+      if (isVisiblePrimary || isVisibleDesktop) {
+        try { closeWatchlistPanel(); } catch(e){}
+        try { if(desktopClone) desktopClone.classList.add('hidden'); } catch(e){}
+        return;
+      }
+
+      // If we receive a popstate whose state was the watchlist marker but no panel is open,
+      // do nothing and allow normal navigation.
+    } catch (e) {
+      // fallback: do nothing
+    }
+  });
+})();
+
+/* Sidebar: Anime and Update Log wiring */
+(function(){
+  const animeBtn = document.getElementById('sidebar-anime');
+  const updatesBtn = document.getElementById('sidebar-updates');
+  const updatePanel = document.getElementById('update-log-panel');
+  const updateClose = document.getElementById('update-log-close');
+
+  if(animeBtn){
+    animeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Open the dedicated anime page
+      location.href = '/anime.html';
+    });
+  }
+
+  function openUpdateLog(){
+    if(!updatePanel) return;
+    updatePanel.classList.remove('hidden');
+    // ensure panel sits to the right of sidebar collapsed/expanded state
+    if(document.body.classList.contains('collapsed-sidebar')){
+      updatePanel.style.left = '72px';
+      updatePanel.style.width = 'calc(100% - 72px)';
+    } else {
+      updatePanel.style.left = '16rem';
+      updatePanel.style.width = '420px';
+    }
+    document.body.style.overflow = 'hidden';
+  }
+  function closeUpdateLog(){
+    if(!updatePanel) return;
+    updatePanel.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  if(updatesBtn){
+    updatesBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Open the standalone update log page
+      location.href = '/update-log.html';
+    });
+  }
+  if(updateClose){
+    updateClose.addEventListener('click', (e) => { e.preventDefault(); closeUpdateLog(); });
+  }
+  // close update panel when clicking outside or pressing Escape
+  document.addEventListener('click', (e) => {
+    if(!updatePanel || updatePanel.classList.contains('hidden')) return;
+    const panelRect = updatePanel.getBoundingClientRect();
+    if(e.clientX < panelRect.left - 8) closeUpdateLog();
+  });
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeUpdateLog(); });
+
+  // keep panel positioned when sidebar is toggled
+  const observer = new MutationObserver(() => {
+    if(!updatePanel || updatePanel.classList.contains('hidden')) return;
+    if(document.body.classList.contains('collapsed-sidebar')){
+      updatePanel.style.left = '72px';
+      updatePanel.style.width = 'calc(100% - 72px)';
+    } else {
+      updatePanel.style.left = '18rem';
+      updatePanel.style.width = '420px';
+    }
+  });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+})();
+</script>
+<script>
+/* Sidebar collapse toggle: icons-only mode persisted to localStorage */
+(function(){
+  const COLLAPSE_KEY = 'sidebar_collapsed_v1';
+  const collapseBtn = document.getElementById('sidebar-collapse');
+  const body = document.body;
+  const iconEl = collapseBtn?.querySelector('.material-symbols-outlined');
+
+  // Row titles language toggler: switch section headings between English and Spanish
+  (function(){
+    const ROW_I18N = {
+      en: {
+        'Top 10 Trending Today': 'Top 10 Trending Today',
+        'Popular - Movie': 'Popular - Movie',
+        'Popular - Series': 'Popular - Series',
+        'Estudios': 'Studios',
+        'Series': 'Series',
+        'Marvel Movies': 'Marvel Movies',
+        'Disney Movies': 'Disney Movies',
+        'Peacock Movies': 'Peacock Movies',
+        'Classics': 'Classics',
+        'HBO Max Movies': 'HBO Max Movies',
+        'HBO Max Series': 'HBO Max Series',
+        'Netflix Movies': 'Netflix Movies',
+        'Netflix Series': 'Netflix Series',
+        'Featured - Movie': 'Featured - Movie'
+      },
+      es: {
+        'Top 10 Trending Today': 'Top 10 Tendencias Hoy',
+        'Popular - Movie': 'Populares - Películas',
+        'Popular - Series': 'Populares - Series',
+        'Estudios': 'Estudios',
+        'Series': 'Series',
+        'Marvel Movies': 'Películas de Marvel',
+        'Disney Movies': 'Películas de Disney',
+        'Peacock Movies': 'Películas de Peacock',
+        'Classics': 'Clásicos',
+        'HBO Max Movies': 'Películas de HBO Max',
+        'HBO Max Series': 'Series de HBO Max',
+        'Netflix Movies': 'Películas de Netflix',
+        'Netflix Series': 'Series de Netflix',
+        'Featured - Movie': 'Destacado - Película'
+      }
+    };
+
+    function applyRowLanguage(lang){
+      try{
+        // find all section headings inside main (row titles)
+        const headings = Array.from(document.querySelectorAll('main section > div > h2, main section h2'));
+        headings.forEach(h => {
+          if(!h) return;
+          // save original english text the first time so toggle can restore exact original
+          if(!h.dataset.origTitle) h.dataset.origTitle = h.textContent.trim();
+          const orig = h.dataset.origTitle;
+          const keyCandidate = orig;
+          // prefer mapping by original English text; fall back to text content lookup in map
+          const map = ROW_I18N[lang] || ROW_I18N.en;
+          // Try direct key match, else try to find by value in en map
+          let translated = null;
+          if(map[keyCandidate]) translated = map[keyCandidate];
+          else {
+            // if orig was already translated (e.g., page loaded in Spanish), try to find the English key by matching values
+            const enMap = ROW_I18N.en;
+            const foundKey = Object.keys(enMap).find(k => enMap[k] === keyCandidate || ROW_I18N.es[k] === keyCandidate);
+            if(foundKey && map[foundKey]) translated = map[foundKey];
+          }
+          // If no translation found and lang is 'en', restore stored original (ensures toggle back to original text)
+          if(!translated && lang === 'en') translated = orig;
+          if(translated) h.textContent = translated;
+        });
+      }catch(e){
+        console.warn('applyRowLanguage failed', e);
+      }
+    }
+
+    // run initially using stored language
+    try{
+      const stored = localStorage.getItem('app_language') || 'en';
+      applyRowLanguage(stored);
+      // listen for storage events (other tabs) and custom events in same tab
+      window.addEventListener('storage', (ev) => {
+        if(ev.key === 'app_language') applyRowLanguage(ev.newValue || 'en');
+      });
+      window.addEventListener('appLanguageChanged', (ev) => {
+        applyRowLanguage(ev.detail?.lang || localStorage.getItem('app_language') || 'en');
+      });
+    }catch(e){}
+  })();
+
+  function applyState(collapsed){
+    if(collapsed){
+      body.classList.add('collapsed-sidebar');
+      if(iconEl){
+        // switch icon glyph and animate a subtle rotation to indicate change
+        iconEl.textContent = 'chevron_right';
+        iconEl.style.transform = 'rotate(180deg)';
+      }
+      collapseBtn.title = 'Expand Sidebar';
+    } else {
+      body.classList.remove('collapsed-sidebar');
+      if(iconEl){
+        iconEl.textContent = 'chevron_left';
+        iconEl.style.transform = 'rotate(0deg)';
+      }
+      collapseBtn.title = 'Minimize Sidebar';
+    }
+    try{ localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); }catch(e){}
+
+    // Adjust open settings/watchlist/discover panels so they respect the sidebar width when toggled.
+    try {
+      const isCollapsed = body.classList.contains('collapsed-sidebar');
+      const leftPx = isCollapsed ? '72px' : '18rem';
+      const widthCalc = isCollapsed ? 'calc(100% - 72px)' : 'calc(100% - 18rem)';
+
+      // primary settings panel (modal/panel)
+      const settingsPanel = document.getElementById('settings-panel');
+      if(settingsPanel && !settingsPanel.classList.contains('hidden')) {
+        settingsPanel.style.left = leftPx;
+        settingsPanel.style.width = widthCalc;
+      }
+
+      // cloned desktop settings panel instance created dynamically
+      const desktopClone = document.getElementById('settings-panel-desktop');
+      if(desktopClone && !desktopClone.classList.contains('hidden')) {
+        desktopClone.style.left = leftPx;
+        desktopClone.style.width = widthCalc;
+      }
+
+      // watchlist primary panel when positioned for desktop
+      const watchlistPanel = document.getElementById('watchlist-panel');
+      if(watchlistPanel && !watchlistPanel.classList.contains('hidden')) {
+        // only adjust if it's been positioned for desktop (left set)
+        if(watchlistPanel.style.left) {
+          watchlistPanel.style.left = leftPx;
+          watchlistPanel.style.width = widthCalc;
+        }
+      }
+
+      // discover desktop clone
+      const discoverClone = document.getElementById('discover-panel-desktop');
+      if(discoverClone && !discoverClone.classList.contains('hidden')) {
+        discoverClone.style.left = leftPx;
+        discoverClone.style.width = widthCalc;
+      }
+
+      // update update-log panel if visible
+      const updatePanel = document.getElementById('update-log-panel');
+      if(updatePanel && !updatePanel.classList.contains('hidden')) {
+        updatePanel.style.left = isCollapsed ? '72px' : '18rem';
+        updatePanel.style.width = isCollapsed ? 'calc(100% - 72px)' : '420px';
+      }
+    } catch (e) {
+      // non-fatal
+      console.warn('adjust panels on collapse failed', e);
+    }
+  }
+
+  // init from storage
+  try{
+    const stored = localStorage.getItem(COLLAPSE_KEY);
+    applyState(stored === '1');
+  }catch(e){ applyState(false); }
+
+  if(collapseBtn){
+    collapseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isCollapsed = body.classList.contains('collapsed-sidebar');
+      applyState(!isCollapsed);
+      // ensure main area metrics update when toggled
+      window.dispatchEvent(new Event('resize'));
+    });
+  }
+
+  // Ensure page initial layout (main had ml-64); override inline style if present
+  const mainEl = document.getElementById('app');
+  if(mainEl){
+    // if not collapsed ensure original spacing
+    function adjustMainOnLoad(){
+      if(body.classList.contains('collapsed-sidebar')){
+        mainEl.style.marginLeft = '72px';
+      } else {
+        mainEl.style.marginLeft = '18rem'; // original ml-72
+      }
+    }
+    adjustMainOnLoad();
+    // reflect changes on collapse toggle
+    new MutationObserver(adjustMainOnLoad).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+})();
+</script>
+
+<!-- AUTH MODAL (desktop kept) -->
+<div id="auth-modal" class="fixed inset-0 z-60 hidden bg-black flex items-center justify-center p-4 overflow-auto">
+  <div class="w-full max-w-2xl mt-0">
+    <div class="bg-black border border-white/5 rounded-xl overflow-hidden">
+      <div class="flex items-center justify-end px-4 py-3 bg-transparent"></div>
+
+      <div id="auth-contents" class="p-6">
+        <div id="auth-signup" class="">
+          <div class="text-center mb-6">
+            <h3 class="text-lg font-semibold text-white mb-1">Create Account</h3>
+            <p class="text-sm text-neutral-400">Enjoy 50k+ movies and 10k+ series for $1.</p>
+          </div>
+
+          <form id="signup-form" class="space-y-3" novalidate>
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-neutral-400">person</span>
+              <input id="su-name" class="flex-1 pr-3 py-2 rounded bg-surface-container/50 border border-outline-variant text-white placeholder:text-neutral-400" placeholder="Full Name" required />
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-neutral-400">email</span>
+              <input id="su-email" type="email" class="flex-1 pr-3 py-2 rounded bg-surface-container/50 border border-outline-variant text-white placeholder:text-neutral-400" placeholder="Email address" required />
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-neutral-400">lock</span>
+              <input id="su-password" type="password" class="flex-1 pr-3 py-2 rounded bg-surface-container/50 border border-outline-variant text-white placeholder:text-neutral-400" placeholder="Password" required />
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-neutral-400">lock</span>
+              <input id="su-password-confirm" type="password" class="flex-1 pr-3 py-2 rounded bg-surface-container/50 border border-outline-variant text-white placeholder:text-neutral-400" placeholder="Confirm Password" required />
+            </div>
+
+            <div class="flex items-start gap-3">
+              <div class="flex items-center h-5">
+                <label class="container" aria-label="Agree to terms">
+                  <input id="su-terms" type="checkbox" required />
+                  <svg viewBox="0 0 64 64" height="1.5em" width="1.5em" aria-hidden="true">
+                    <path d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16" pathLength="575.0541381835938" class="path"></path>
+                  </svg>
+                </label>
+              </div>
+              <label class="text-sm text-on-surface-variant">I agree to the <a class="text-primary hover:underline" href="#">Terms of Service</a> and <a class="text-primary hover:underline" href="#">Privacy Policy</a></label>
+            </div>
+
+            <div class="flex items-start gap-3">
+              <div class="flex items-center h-5">
+                <label class="container" aria-label="Age confirmation">
+                  <input id="age_confirm" type="checkbox" required />
+                  <svg viewBox="0 0 64 64" height="1.5em" width="1.5em" aria-hidden="true">
+                    <path d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16" pathLength="575.0541381835938" class="path"></path>
+                  </svg>
+                </label>
+              </div>
+              <label class="text-sm text-on-surface-variant">I confirm that I am 13 years of age or older</label>
+            </div>
+
+            <button class="w-full mt-2 py-3 rounded bg-blue-500 text-white" type="submit">Create Account</button>
+          </form>
+
+          <p class="mt-4 text-sm text-neutral-400 text-center">
+            Already have an account? <button id="to-signin" class="text-blue-300">Sign in</button>
+          </p>
+        </div>
+
+        <div id="auth-signin" class="hidden">
+          <div class="text-center mb-6">
+            <h3 class="text-lg font-semibold text-white mb-1">Sign in</h3>
+            <p class="text-sm text-neutral-400">Welcome back — sign in to continue.</p>
+          </div>
+
+          <form id="signin-form" class="space-y-3">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-neutral-400">email</span>
+              <input id="si-email" type="email" class="flex-1 pr-3 py-2 rounded bg-surface-container/50 border border-outline-variant text-white placeholder:text-neutral-400" placeholder="Email address" required />
+            </div>
+
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-neutral-400">lock</span>
+              <input id="si-password" type="password" class="flex-1 pr-3 py-2 rounded bg-surface-container/50 border border-outline-variant text-white placeholder:text-neutral-400" placeholder="Password" required />
+            </div>
+
+            <button class="w-full mt-2 py-3 rounded bg-blue-500 text-white" type="submit">Sign in</button>
+          </form>
+
+          <p class="mt-4 text-sm text-neutral-400 text-center">
+            Don't have an account? <button id="to-signup" class="text-blue-300">Create account</button>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Wire Live TV button to open a separate Live TV page
+  (function(){
+    const btn = document.getElementById('sidebar-livetv');
+    if(!btn) return;
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      try {
+        // Navigate to the dedicated Live TV page
+        location.href = '/live-tv.html';
+      } catch (err) {
+        console.warn('Failed to open Live TV page, falling back to home', err);
+        try { location.href = '/'; } catch(e) {}
+      }
+    });
+  })();
+</script>
+
+<script>
+  // Keep Settings email field in sync with the account used on auth pages.
+  (function(){
+    function getStoredUser() {
+      try {
+        const raw = localStorage.getItem('vidlo_user');
+        if(!raw) return null;
+        return JSON.parse(raw);
+      } catch (e) { return null; }
+    }
+
+    function updateSettingsEmailDisplay() {
+      try {
+        const el = document.getElementById('settings-email-value');
+        if(!el) return;
+        const user = getStoredUser();
+        if(user && (user.email || user.name)) {
+          const email = user.email || (typeof user === 'string' ? user : '');
+          el.textContent = email || (user.name ? user.name : 'Signed in');
+        } else {
+          el.textContent = 'Not signed in';
+        }
+      } catch (e) { /* noop */ }
+    }
+
+    // Update on load
+    document.addEventListener('DOMContentLoaded', updateSettingsEmailDisplay);
+
+    // Update when other tabs change vidlo_user
+    window.addEventListener('storage', function(e){
+      if(e.key === 'vidlo_user' || e.key === 'app_language') {
+        try { updateSettingsEmailDisplay(); } catch(e) {}
+      }
+    });
+
+    // Expose for direct calls (e.g. after auth actions in same tab)
+    window.updateSettingsEmailDisplay = updateSettingsEmailDisplay;
+
+    // Try to react to common app flows that set vidlo_user in same tab
+    // (watch for changes to localStorage via a short polling fallback)
+    let lastRaw = localStorage.getItem('vidlo_user');
+    setInterval(function(){
+      try {
+        const cur = localStorage.getItem('vidlo_user');
+        if(cur !== lastRaw){
+          lastRaw = cur;
+          updateSettingsEmailDisplay();
+        }
+      } catch(e){}
+    }, 800);
+  })();
+</script>
+
+/* Lock page scrolling on the home screen while preserving row horizontal scroll interaction.
+   We only add the class on this page so other pages keep normal scrolling. */
+<script>
+  (function(){
+    try {
+      // Add a class that hides the page-level vertical scroll but preserves horizontal scroll inside rows.
+      // Only apply on the homepage (this document).
+      document.body.classList.add('home-no-scroll');
+      // Ensure rows remain scrollable by enabling overflow-x (already set) and allowing pointer/touch interactions.
+      document.querySelectorAll('.scroll-row, .grid-wrap, .row-container > .flex, .hide-scrollbar').forEach(el => {
+        // Reinforce horizontal scrolling and touch behavior
+        el.style.overflowX = el.style.overflowX || 'auto';
+        el.style.webkitOverflowScrolling = 'touch';
+        el.style.touchAction = el.style.touchAction || 'pan-x';
+      });
+      // Allow escape hatch: pressing 'Escape' temporarily re-enables page scroll for debugging
+      window.addEventListener('keydown', (e)=> { if(e.key === 'Escape'){ document.body.classList.toggle('home-no-scroll'); } });
+    } catch (e) { console.warn('home scroll lock init failed', e); }
+  })();
+</script>
+<script src="/tv-spatial-nav.js"></script>
+</body>
+</html>

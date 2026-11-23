@@ -1,0 +1,623 @@
+<!doctype html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Movie Details Overlay</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = { darkMode: "class", theme: { extend: {} } };
+  </script>
+  <style>
+    body {
+      background:#0A0A0A;
+      color:#e5e2e1;
+      font-family: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      min-height:100dvh;
+    }
+
+    /* Button used to open the overlay (demo only) */
+    .open-demo-btn {
+      background: linear-gradient(90deg,#4f46e5,#6366f1);
+      box-shadow: 0 12px 30px rgba(79,70,229,0.16);
+      border-radius: 14px;
+    }
+
+    /* Trailer / play buttons accent */
+    #play-btn, #trailer-btn {
+      border-radius: 14px;
+      gap: 0.75rem;
+    }
+    #play-btn { background: linear-gradient(90deg,#4f46e5,#6366f1); box-shadow: 0 12px 30px rgba(79,70,229,0.16); }
+    #trailer-btn { border: 1px solid rgba(255,255,255,0.06); background: transparent; color: #e5e2e1; }
+
+    /* Focus styles for keyboard users */
+    button:focus:not(.season-btn) {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+      transform: translateY(-1px);
+    }
+    .season-btn:focus {
+      outline: none;
+    }
+
+    /* Ensure icons inside buttons are sized and aligned */
+    button .material-symbols-outlined {
+      font-size: 18px;
+      opacity: 0.96;
+      display: inline-flex;
+      vertical-align: middle;
+      line-height: 1;
+    }
+
+    /* Restore normal size for action icons in the details modal (like, dislike, watchlist, share) */
+    #like-btn .material-symbols-outlined,
+    #dislike-btn .material-symbols-outlined,
+    #watchlist-btn .material-symbols-outlined,
+    #share-btn .material-symbols-outlined {
+      font-size: 30px;
+      opacity: 1;
+    }
+    #like-btn span:last-child,
+    #dislike-btn span:last-child,
+    #watchlist-btn span:last-child,
+    #share-btn span:last-child {
+      font-size: 13px !important;
+    }
+
+    .close-btn{ position:absolute; left:36px; right:auto; top:26px; z-index:10 }
+    .icon-btn{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.04);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+    }
+    .close-btn:hover, .icon-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.04); }
+
+    /* overlay / video player (used by trailer + play buttons) */
+    .vid-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:80; display:flex; align-items:center; justify-content:center; padding:1rem; transition: background .12s ease }
+    .vid-frame{
+      width:100%;
+      max-width:1200px;
+      aspect-ratio:16/9;
+      height:auto;
+      max-height:calc(100vh - 48px);
+      background:#000;
+      border-radius:8px;
+      overflow:hidden;
+      position:relative;
+      box-shadow:0 18px 60px rgba(0,0,0,0.6);
+      display:flex;
+      align-items:stretch;
+    }
+    .vid-overlay.fullscreen{ align-items:stretch; justify-content:stretch; padding:0; background:rgba(0,0,0,0.98) }
+    .vid-overlay.fullscreen .vid-frame{ width:100%; height:100%; max-width:none; max-height:none; border-radius:0; box-shadow:none; }
+    @media(min-width:768px){ .vid-frame{ height:50vh } }
+
+    /* toast */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 1rem;
+      z-index: 90;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-dvh p-6">
+
+
+
+  <!-- ============================ -->
+  <!-- MOVIE DETAILS OVERLAY (MODAL) -->
+  <!-- ============================ -->
+  <div id="details-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60" data-close></div>
+
+    <div class="relative inset-0 w-full h-full overflow-auto">
+      <div class="relative w-full min-h-full bg-transparent flex flex-col">
+        <div id="details-hero" class="w-full h-[40vh] md:h-[50vh] bg-cover bg-center"></div>
+
+        <div class="bg-[#0A0A0A] -mt-6 rounded-t-2xl p-4 flex-1">
+          <div class="max-w-3xl mx-auto">
+            <div class="text-center">
+              <h1 id="details-title" class="text-2xl md:text-3xl font-bold text-white"></h1>
+              <div id="details-meta" class="flex items-center justify-center gap-3 text-neutral-400 text-sm mt-2"></div>
+            </div>
+
+            <div class="mt-4 space-y-3">
+              <button id="play-btn" class="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3.5 rounded-xl">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span><span>Play</span>
+              </button>
+              <button id="trailer-btn" class="w-full flex items-center justify-center gap-2 bg-transparent border border-neutral-700 text-white py-3.5 rounded-xl">
+                <span class="material-symbols-outlined">movie</span><span>Watch Trailer</span>
+              </button>
+            </div>
+
+            <div class="flex justify-around items-center py-4 border-t border-neutral-800 mt-4">
+              <button id="like-btn" class="flex flex-col items-center text-neutral-400">
+                <span class="material-symbols-outlined">thumb_up</span><span class="text-[10px]">Like</span>
+              </button>
+              <button id="dislike-btn" class="flex flex-col items-center text-neutral-400">
+                <span class="material-symbols-outlined">thumb_down</span><span class="text-[10px]">Dislike</span>
+              </button>
+              <button id="watchlist-btn" class="flex flex-col items-center text-neutral-400">
+                <span class="material-symbols-outlined">bookmark_add</span><span class="text-[10px]">Watchlist</span>
+              </button>
+              <button id="share-btn" class="flex flex-col items-center text-neutral-400">
+                <span class="material-symbols-outlined">share</span><span class="text-[10px]">Share</span>
+              </button>
+            </div>
+
+            <div id="details-plot" class="mt-4 text-neutral-300 text-sm"></div>
+
+            <div id="details-episodes" class="mt-4"></div>
+          </div>
+        </div>
+
+        <button id="details-close" class="fixed right-8 top-6 bg-black/50 p-2 rounded-full text-white z-60">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIDEO OVERLAY (used by Play / Watch Trailer) -->
+  <div id="video-overlay" class="hidden vid-overlay">
+    <div class="vid-frame" role="dialog" aria-label="Video player">
+      <button id="video-close" class="close-btn bg-white/10 p-2 rounded-full text-white"><span class="material-symbols-outlined">close</span></button>
+      <iframe id="video-iframe" src="" frameborder="0" allowfullscreen style="width:100%; height:100%; border:0;" role="application" aria-label="Embedded video"></iframe>
+    </div>
+  </div>
+
+  <!-- lightweight status/toast area -->
+  <div id="toast" class="fixed bottom-8 right-4 z-60 hidden bg-black/70 text-white px-4 py-2 rounded"></div>
+
+  <script>
+    /* ===========================================================
+       Self-contained demo logic for the Movie Details overlay.
+       In the original app this data comes from openDetails(imdbID, type)
+       calling a TMDb/OMDb fetch wrapper. Here it's mocked so this
+       file works standalone with no external API calls.
+       =========================================================== */
+
+    const qs = (sel) => document.querySelector(sel);
+
+    const state = { lastDetails: null };
+
+    // simple localStorage-backed helpers (like/dislike/watchlist persistence)
+    const storage = {
+      // Use the shared app-localStorage keys (no demo_ prefix) so actions here
+      // update the same 'watchlist' used by the watchlist page.
+      get(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : fallback;
+        } catch (e) { return fallback; }
+      },
+      set(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+      }
+    };
+
+    function hasIn(key, id) {
+      const arr = storage.get(key, []);
+      return Array.isArray(arr) && arr.includes(id);
+    }
+
+    function toggleSet(key, id) {
+      const set = new Set(storage.get(key, []));
+      if (set.has(id)) set.delete(id); else set.add(id);
+      storage.set(key, [...set]);
+    }
+
+    function toggleWatchlist(data) {
+      const items = storage.get('watchlist', []);
+      const idx = items.findIndex(i => i.id === data.imdbID);
+      if (idx >= 0) {
+        items.splice(idx, 1);
+        storage.set('watchlist', items);
+        return false;
+      } else {
+        items.unshift({ id: data.imdbID, title: data.Title, poster: data.Poster, type: data.Type });
+        storage.set('watchlist', items);
+        return true;
+      }
+    }
+
+    function showToast(msg) {
+      const t = qs('#toast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      clearTimeout(t._timeout);
+      t._timeout = setTimeout(() => t.classList.add('hidden'), 2200);
+    }
+
+    function updateActionButtons(imdbID) {
+      const likeBtn = qs('#like-btn');
+      const dislikeBtn = qs('#dislike-btn');
+      const watchlistBtn = qs('#watchlist-btn');
+
+      const setActive = (btn, active) => {
+        if (!btn) return;
+        btn.classList.toggle('text-indigo-400', !!active);
+        btn.classList.toggle('text-neutral-400', !active);
+      };
+
+      setActive(likeBtn, hasIn('likes', imdbID));
+      setActive(dislikeBtn, hasIn('dislikes', imdbID));
+      setActive(watchlistBtn, hasIn('watchlist', imdbID));
+    }
+
+    // Real TMDb-backed details fetch for the standalone details page.
+    // Uses TMDb id passed as imdbID (which here is the TMDb id string).
+    const TMDB_KEY = 'b15142dfa85e41840fcd4ab30d82488f';
+
+    async function fetchDetailsMock(imdbID, type) {
+      if (!imdbID) return null;
+      try {
+        const isTV = (String(type || '').toLowerCase() === 'series' || String(type || '').toLowerCase() === 'tv');
+        const append = 'credits,videos';
+        const endpoint = isTV
+          ? `https://api.themoviedb.org/3/tv/${encodeURIComponent(imdbID)}?api_key=${TMDB_KEY}&language=en-US&append_to_response=${append}`
+          : `https://api.themoviedb.org/3/movie/${encodeURIComponent(imdbID)}?api_key=${TMDB_KEY}&language=en-US&append_to_response=${append}`;
+
+        const res = await fetch(endpoint);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!data || data.status_code) return null;
+
+        // Attempt to fetch official content certification (age rating) from TMDb.
+        // Movies have release_dates endpoint; TV has content_ratings endpoint.
+        let certification = '';
+        try {
+          if (isTV) {
+            const crRes = await fetch(`https://api.themoviedb.org/3/tv/${encodeURIComponent(imdbID)}/content_ratings?api_key=${TMDB_KEY}`);
+            if (crRes && crRes.ok) {
+              const crJson = await crRes.json();
+              if (crJson && Array.isArray(crJson.results)) {
+                // Prefer US rating, then any available
+                const us = crJson.results.find(r => String(r.iso_3166_1).toUpperCase() === 'US');
+                certification = (us && us.rating) ? us.rating : (crJson.results[0] && crJson.results[0].rating ? crJson.results[0].rating : '');
+              }
+            }
+          } else {
+            const rdRes = await fetch(`https://api.themoviedb.org/3/movie/${encodeURIComponent(imdbID)}/release_dates?api_key=${TMDB_KEY}`);
+            if (rdRes && rdRes.ok) {
+              const rdJson = await rdRes.json();
+              if (rdJson && Array.isArray(rdJson.results)) {
+                const us = rdJson.results.find(r => String(r.iso_3166_1).toUpperCase() === 'US');
+                if (us && Array.isArray(us.release_dates) && us.release_dates.length) {
+                  // pick the certification if present on any US release date entry
+                  const found = us.release_dates.find(d => d.certification && String(d.certification).trim() !== '');
+                  certification = found ? found.certification : (us.release_dates[0].certification || '');
+                } else if (rdJson.results[0] && Array.isArray(rdJson.results[0].release_dates) && rdJson.results[0].release_dates.length) {
+                  certification = rdJson.results[0].release_dates[0].certification || '';
+                }
+              }
+            }
+          }
+        } catch (rateErr) {
+          console.warn('certification fetch failed', rateErr);
+          certification = '';
+        }
+
+        // Normalize certification: if still empty, fall back to adult flag
+        let ratedLabel = '';
+        if (certification && String(certification).trim() !== '') {
+          ratedLabel = String(certification).trim();
+        } else {
+          ratedLabel = data.adult ? 'R' : 'NR';
+        }
+
+        const mapped = {
+          imdbID: String(imdbID),
+          Type: isTV ? 'series' : 'movie',
+          Title: data.title || data.name || '',
+          Year: (data.release_date || data.first_air_date || '').slice(0,4) || '',
+          Runtime: data.runtime ? `${data.runtime} min` : (data.episode_run_time && data.episode_run_time[0] ? `${data.episode_run_time[0]} min` : ''),
+          Rated: ratedLabel,
+          VoteAverage: data.vote_average ? Number(data.vote_average).toFixed(1) : '',
+          Poster: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : (data.backdrop_path ? `https://image.tmdb.org/t/p/w500${data.backdrop_path}` : ''),
+          Plot: data.overview || '',
+          _raw: data,
+          Genres: Array.isArray(data.genres) ? data.genres.map(g => g.name).join(', ') : ''
+        };
+
+        return mapped;
+      } catch (err) {
+        console.error('fetchDetailsMock (TMDb) error', err);
+        return null;
+      }
+    }
+
+    // If the page was opened with ?tmdb=... optionally &type=movie|tv then auto-open details.
+    (function openFromQuery() {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const tmdb = sp.get('tmdb');
+        const type = (sp.get('type') || '').toLowerCase();
+        if (tmdb) {
+          // call openDetails after a slight delay so UI has mounted
+          setTimeout(() => {
+            openDetails(String(tmdb), (type === 'tv' ? 'series' : (type || 'movie')));
+          }, 50);
+        }
+      } catch (e) { /* ignore */ }
+    })();
+
+    async function openDetails(imdbID, type = 'movie') {
+      try {
+        const data = await fetchDetailsMock(imdbID, type);
+        if (data) {
+          state.lastDetails = data;
+
+          qs('#details-hero').style.backgroundImage = `url('${data.Poster}')`;
+          qs('#details-title').textContent = data.Title || '';
+
+          const score = data.VoteAverage ? `${data.VoteAverage}/10` : '';
+          qs('#details-meta').innerHTML =
+            `${data.Year || ''} <span class="w-1 h-1 rounded-full bg-neutral-500 inline-block"></span> ${data.Runtime || ''} <span class="w-1 h-1 rounded-full bg-neutral-500 inline-block"></span> ${data.Rated || ''}${score ? ' <span class="w-1 h-1 rounded-full bg-neutral-500 inline-block"></span> ' + `<span title="Average score" class="text-yellow-400 text-sm">★ ${score}</span>` : ''}`;
+
+          qs('#details-plot').textContent = data.Plot || '';
+
+          const episodesWrap = qs('#details-episodes');
+          episodesWrap.innerHTML = '';
+
+          if (type === 'series' || (data.Type && data.Type.toLowerCase() === 'series')) {
+            renderSeasonAndEpisodes(data, episodesWrap);
+          }
+
+          updateActionButtons(data.imdbID);
+          qs('#details-modal').classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Error fetching details');
+      }
+    }
+
+    /* Builds the season selector + episode list for series.
+       Mirrors the original app's logic but pulls from the mock
+       data._raw payload instead of a live TMDb fetch. */
+    function renderSeasonAndEpisodes(data, episodesWrap) {
+      const epTitle = document.createElement('h3');
+      epTitle.className = 'text-white font-semibold mb-2';
+      epTitle.textContent = 'Episodes';
+      episodesWrap.appendChild(epTitle);
+
+      const seasonWrap = document.createElement('div');
+      seasonWrap.className = 'mb-3';
+
+      const seasonLabelRow = document.createElement('div');
+      seasonLabelRow.className = 'flex items-center justify-between gap-3 mb-2';
+      const seasonLabel = document.createElement('div');
+      seasonLabel.className = 'text-sm text-neutral-400';
+      seasonLabel.textContent = 'Season';
+      seasonLabelRow.appendChild(seasonLabel);
+      seasonWrap.appendChild(seasonLabelRow);
+
+      const seasonButtons = document.createElement('div');
+      seasonButtons.id = 'details-season-buttons';
+      seasonButtons.className = 'flex items-center gap-2 mb-3 flex-wrap';
+      seasonWrap.appendChild(seasonButtons);
+      episodesWrap.appendChild(seasonWrap);
+
+      function renderEpisodesForSeason(seasonNum) {
+        Array.from(episodesWrap.querySelectorAll('.episode-btn')).forEach(n => n.remove());
+
+        const raw = data._raw || {};
+        let episodesList = null;
+
+        if (raw._season_episodes && raw._season_episodes[seasonNum] && Array.isArray(raw._season_episodes[seasonNum])) {
+          episodesList = raw._season_episodes[seasonNum];
+        }
+
+        // No cached episode list for this season — fall back to a placeholder count
+        let episodeCount = 3;
+        if (episodesList && episodesList.length) {
+          episodeCount = episodesList.length;
+        } else if (raw.seasons && Array.isArray(raw.seasons)) {
+          const m = raw.seasons.find(s => Number(s.season_number) === Number(seasonNum));
+          if (m && m.episode_count) episodeCount = Math.max(1, Number(m.episode_count));
+        }
+
+        for (let e = 1; e <= episodeCount; e++) {
+          const btn = document.createElement('button');
+          btn.className = 'episode-btn w-full text-left bg-transparent border border-neutral-800/40 py-2 px-3 rounded-md mb-2 flex justify-between items-center text-sm';
+          const epData = episodesList && episodesList[e - 1] ? episodesList[e - 1] : null;
+          const epLabel = epData && (epData.name || epData.title) ? `${epData.name || epData.title}` : `S${seasonNum}:E${e}`;
+          const epDesc = `Play episode ${e}`;
+          const meta = epData ? (epData.air_date ? ` • ${epData.air_date}` : '') : '';
+          // mock thumbnail placeholder (original app used TMDb episode stills)
+          const stillSrc = `https://placehold.co/280x160/1a1a1a/666?text=S${seasonNum}E${e}`;
+          btn.innerHTML = `
+            <div class="flex items-center gap-3">
+              <img src="${stillSrc}" alt="${epLabel}" class="w-28 h-16 object-cover rounded-md flex-shrink-0">
+              <div class="flex-1">
+                <div class="font-medium text-white">${epLabel}${meta}</div>
+                <div class="text-neutral-400 text-xs mt-0.5">${epDesc}</div>
+              </div>
+            </div>
+            <div class="material-symbols-outlined text-neutral-300">play_arrow</div>
+          `;
+          btn.addEventListener('click', () => playTVEpisode(data.imdbID, seasonNum, e, data.Title));
+          episodesWrap.appendChild(btn);
+        }
+      }
+
+      let seasons = [{ season_number: 1 }];
+      if (data._raw && Array.isArray(data._raw.seasons) && data._raw.seasons.length) {
+        seasons = data._raw.seasons.slice().sort((a, b) => (a.season_number || 0) - (b.season_number || 0));
+      }
+
+      seasonButtons.innerHTML = '';
+      seasons.forEach(s => {
+        const num = s.season_number || s.season || 1;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'season-btn text-sm py-1 px-3 bg-transparent border border-white/12 rounded-full text-white/80 hover:text-white hover:bg-white/6 transition';
+        btn.dataset.season = String(num);
+        btn.setAttribute('aria-pressed', 'false');
+        btn.textContent = `Season ${num}`;
+        btn.addEventListener('click', () => {
+          seasonButtons.querySelectorAll('.season-btn').forEach(x => {
+            x.setAttribute('aria-pressed', 'false');
+          });
+          btn.setAttribute('aria-pressed', 'true');
+          renderEpisodesForSeason(Number(btn.dataset.season) || 1);
+        });
+        seasonButtons.appendChild(btn);
+      });
+
+      // auto-select season 1 on open
+      const firstBtn = seasonButtons.querySelector('.season-btn');
+      if (firstBtn) firstBtn.click();
+    }
+
+    function playTVEpisode(imdbID, season, episode, title) {
+      const iframe = qs('#video-iframe');
+      iframe.src = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+      const overlay = qs('#video-overlay');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('fullscreen');
+      document.body.style.overflow = 'hidden';
+      showToast(`Playing ${title} S${season}E${episode}`);
+    }
+
+    function closeDetails() {
+      qs('#details-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    qs('#details-close').addEventListener('click', () => {
+      // Navigate back to the homepage when the close button is clicked
+      try {
+        window.location.href = '/index.html';
+      } catch (e) {
+        // fallback: hide modal if navigation fails
+        closeDetails();
+      }
+    });
+    qs('#details-modal').addEventListener('click', (e) => {
+      if (e.target.dataset.close !== undefined) closeDetails();
+    });
+
+    qs('#play-btn').addEventListener('click', () => {
+      const d = state.lastDetails;
+      if (!d) return;
+      const iframe = qs('#video-iframe');
+      iframe.src = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+      const overlay = qs('#video-overlay');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('fullscreen');
+      document.body.style.overflow = 'hidden';
+    });
+
+    qs('#trailer-btn').addEventListener('click', async () => {
+      const d = state.lastDetails;
+      if (!d) return;
+      try {
+        // prefer TMDb-provided videos (YouTube) if available in the cached payload
+        let videos = d._raw && d._raw.videos && Array.isArray(d._raw.videos.results) ? d._raw.videos.results : [];
+
+        // If no videos were included in the cached details, fetch TMDb videos endpoint directly
+        if ((!videos || videos.length === 0) && d.imdbID) {
+          try {
+            const isTV = (String(d.Type || '').toLowerCase() === 'series' || String(d.Type || '').toLowerCase() === 'tv');
+            const endpoint = isTV
+              ? `https://api.themoviedb.org/3/tv/${encodeURIComponent(d.imdbID)}/videos?api_key=${TMDB_KEY}&language=en-US`
+              : `https://api.themoviedb.org/3/movie/${encodeURIComponent(d.imdbID)}/videos?api_key=${TMDB_KEY}&language=en-US`;
+            const resp = await fetch(endpoint);
+            const j = await resp.json();
+            if (j && Array.isArray(j.results)) videos = j.results;
+          } catch (e) { /* ignore fetch error and fall back */ }
+        }
+
+        // prefer trailer/teaser from YouTube
+        const yt = (videos || []).find(v => v.site === 'YouTube' && /trailer|teaser/i.test(v.type));
+        if (yt) {
+          const embed = `https://www.youtube.com/embed/${yt.key}?autoplay=1&rel=0`;
+          const iframe = qs('#video-iframe');
+          if (iframe) {
+            iframe.dataset.expectedImdb = d.imdbID || '';
+            iframe.src = embed;
+            iframe.removeAttribute('data-fallback-used');
+            const overlay = qs('#video-overlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('fullscreen');
+            document.body.style.overflow = 'hidden';
+            return;
+          } else {
+            window.open(`https://www.youtube.com/watch?v=${yt.key}`, '_blank');
+            return;
+          }
+        }
+
+        // fallback: open YouTube search for an official trailer in a new tab if TMDb had no YouTube video
+        const q = encodeURIComponent(`${d.Title} ${d.Year} official trailer`);
+        window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+      } catch (err) {
+        // final fallback: open YouTube search
+        try {
+          const q = encodeURIComponent(`${d.Title} ${d.Year} official trailer`);
+          window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+        } catch (e) { console.warn('trailer open failed', e); }
+      }
+    });
+
+    qs('#video-close').addEventListener('click', () => {
+      qs('#video-iframe').src = '';
+      const overlay = qs('#video-overlay');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('fullscreen');
+      document.body.style.overflow = '';
+    });
+
+    qs('#like-btn').addEventListener('click', () => {
+      const d = state.lastDetails; if (!d) return;
+      toggleSet('likes', d.imdbID);
+      const dis = new Set(storage.get('dislikes', [])); dis.delete(d.imdbID); storage.set('dislikes', [...dis]);
+      updateActionButtons(d.imdbID);
+    });
+
+    qs('#dislike-btn').addEventListener('click', () => {
+      const d = state.lastDetails; if (!d) return;
+      toggleSet('dislikes', d.imdbID);
+      const likes = new Set(storage.get('likes', [])); likes.delete(d.imdbID); storage.set('likes', [...likes]);
+      updateActionButtons(d.imdbID);
+    });
+
+    qs('#watchlist-btn').addEventListener('click', () => {
+      const d = state.lastDetails; if (!d) return;
+      const added = toggleWatchlist(d);
+      updateActionButtons(d.imdbID);
+      showToast(added ? 'Added to watchlist' : 'Removed from watchlist');
+    });
+
+    qs('#share-btn').addEventListener('click', () => {
+      const d = state.lastDetails;
+      if (!d) { showToast('No details available'); return; }
+      const shareUrl = `https://example.com/watch/${d.Type === 'series' ? 'tv' : 'movie'}/${encodeURIComponent(d.imdbID)}`;
+      if (navigator.share) {
+        navigator.share({ title: d.Title, url: shareUrl }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl);
+        showToast('Link copied to clipboard');
+      }
+    });
+
+    // Demo triggers
+    qs('#open-demo-movie').addEventListener('click', () => openDetails('demo-movie-123', 'movie'));
+    qs('#open-demo-series').addEventListener('click', () => openDetails('demo-series-456', 'series'));
+  </script>
+</body>
+</html>

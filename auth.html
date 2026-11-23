@@ -1,0 +1,463 @@
+<!doctype html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vidlo — Sign In</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* Make the page and auth container span the full viewport with a solid black background */
+    html, body { height: 100dvh; margin: 0; background: #000; }
+    body {
+      background: #000;
+      color: #e5e2e1;
+      font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    /* Ensure the outer card fills vertically on large viewports while keeping centered content */
+    .bg-black.border {
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    /* Keep the inner auth contents constrained but allow vertical centering */
+    #auth-contents { width: 100%; max-width: 420px; box-sizing: border-box; }
+
+    #auth-contents input,
+    #auth-contents select,
+    #auth-contents textarea {
+      background: #0A0A0A;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #e5e2e1;
+      caret-color: #e5e2e1;
+      padding: 0.9rem 1rem 0.9rem 2.8rem;
+      font-size: 15px;
+      line-height: 1.2;
+      border-radius: 12px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+      transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
+      width: 100%;
+      -webkit-appearance: none;
+    }
+    #auth-contents input::placeholder {
+      color: #9ca3af;
+      opacity: 1;
+      font-size: 14px;
+    }
+    #auth-contents .flex.items-center.gap-3 {
+      position: relative;
+    }
+    #auth-contents .flex.items-center.gap-3 .material-symbols-outlined {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      pointer-events: none;
+      font-size: 20px;
+    }
+    #auth-contents input:focus {
+      outline: none;
+      border-color: rgba(99,102,241,0.9);
+      box-shadow: 0 6px 18px rgba(99,102,241,0.08);
+      transform: translateY(-1px);
+    }
+
+    #auth-contents input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+    .container {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container input { display: none; }
+    .container svg {
+      overflow: visible;
+      display: inline-block;
+      vertical-align: middle;
+      width: 20px;
+      height: 20px;
+    }
+    .path {
+      fill: none;
+      stroke: white;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke-dasharray 0.5s ease, stroke-dashoffset 0.5s ease;
+      stroke-dasharray: 241 9999999;
+      stroke-dashoffset: 0;
+      opacity: 0.35;
+    }
+    .container input:checked ~ svg .path {
+      stroke-dasharray: 70.5096664428711 9999999;
+      stroke-dashoffset: -262.2723388671875;
+      opacity: 1;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 1rem;
+      z-index: 99;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="w-full max-w-md">
+  <div class="bg-black border border-white/5 rounded-xl overflow-hidden shadow-2xl">
+    <div id="auth-contents" class="p-6">
+
+      <!-- Sign Up pane -->
+      <div id="auth-signup" class="">
+        <div class="text-center mb-6">
+          <h3 class="text-lg font-semibold text-white mb-1">Create Account</h3>
+          <p class="text-sm text-neutral-400">Enjoy 50k+ movies and 10k+ series for $1.</p>
+        </div>
+
+        <form id="signup-form" class="space-y-3" novalidate>
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-neutral-400">person</span>
+            <input id="su-name" placeholder="Full Name" required />
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-neutral-400">email</span>
+            <input id="su-email" type="email" placeholder="Email address" required />
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-neutral-400">lock</span>
+            <input id="su-password" type="password" placeholder="Password" required />
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-neutral-400">lock</span>
+            <input id="su-password-confirm" type="password" placeholder="Confirm Password" required />
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="flex items-center h-5">
+              <label class="container" aria-label="Agree to terms">
+                <input id="su-terms" type="checkbox" required />
+                <svg viewBox="0 0 64 64" height="1.5em" width="1.5em" aria-hidden="true">
+                  <path d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16" pathLength="575.0541381835938" class="path"></path>
+                </svg>
+              </label>
+            </div>
+            <label id="su-terms-label" class="text-sm text-neutral-400">I agree to the <a class="text-blue-400 hover:underline" href="#">Terms of Service</a> and <a class="text-blue-400 hover:underline" href="#">Privacy Policy</a></label>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="flex items-center h-5">
+              <label class="container" aria-label="Age confirmation">
+                <input id="age_confirm" type="checkbox" required />
+                <svg viewBox="0 0 64 64" height="1.5em" width="1.5em" aria-hidden="true">
+                  <path d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16" pathLength="575.0541381835938" class="path"></path>
+                </svg>
+              </label>
+            </div>
+            <label id="su-age-label" class="text-sm text-neutral-400">I confirm that I am 13 years of age or older</label>
+          </div>
+
+          <button class="w-full mt-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 transition-colors text-white font-medium" type="submit">Create Account</button>
+
+          <button id="guest-signin" type="button" class="w-full mt-3 py-3 rounded-xl bg-transparent border border-white/20 text-neutral-100 hover:bg-white/5 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500">Sign in as Guest</button>
+        </form>
+
+        <p class="mt-4 text-sm text-neutral-400 text-center">
+          Already have an account? <button id="to-signin" class="text-blue-400 hover:underline">Sign in</button>
+        </p>
+      </div>
+
+      <!-- Sign In pane -->
+      <div id="auth-signin" class="hidden">
+        <div class="text-center mb-6">
+          <h3 class="text-lg font-semibold text-white mb-1">Sign in</h3>
+          <p class="text-sm text-neutral-400">Welcome back — sign in to continue.</p>
+        </div>
+
+        <form id="signin-form" class="space-y-3">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-neutral-400">email</span>
+            <input id="si-email" type="email" placeholder="Email address" required />
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-neutral-400">lock</span>
+            <input id="si-password" type="password" placeholder="Password" required />
+          </div>
+
+          <button class="w-full mt-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 transition-colors text-white font-medium" type="submit">Sign in</button>
+        </form>
+
+        <p class="mt-4 text-sm text-neutral-400 text-center">
+          Don't have an account? <button id="to-signup" class="text-blue-400 hover:underline">Create account</button>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<script>
+  // simple toast helper
+  function showToast(msg, ms = 1800) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.remove('hidden');
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.classList.add('hidden'), ms);
+  }
+
+  // Language dictionary for auth page
+  const AUTH_DICT = {
+    en: {
+      signup_title: 'Create Account',
+      signup_sub: 'Enjoy 50k+ movies and 10k+ series for $1.',
+      signin_title: 'Sign in',
+      signin_sub: 'Welcome back — sign in to continue.',
+      full_name_placeholder: 'Full Name',
+      email_placeholder: 'Email address',
+      password_placeholder: 'Password',
+      confirm_password_placeholder: 'Confirm Password',
+      create_account_btn: 'Create Account',
+      create_account_link: 'Create account',
+      already_have: 'Already have an account?',
+      already_have_btn: 'Sign in',
+      dont_have: "Don't have an account?",
+      dont_have_btn: 'Create account',
+      passwords_mismatch: 'Passwords do not match',
+      welcome_msg: 'Welcome, ',
+      signed_in_msg: 'Signed in successfully!',
+      su_terms: 'I agree to the Terms of Service and Privacy Policy',
+      su_age: 'I confirm that I am 13 years of age or older'
+    },
+    es: {
+      signup_title: 'Crear cuenta',
+      signup_sub: 'Disfruta 50k+ películas y 10k+ series por $1.',
+      signin_title: 'Iniciar sesión',
+      signin_sub: 'Bienvenido de nuevo — inicia sesión para continuar.',
+      full_name_placeholder: 'Nombre completo',
+      email_placeholder: 'Correo electrónico',
+      password_placeholder: 'Contraseña',
+      confirm_password_placeholder: 'Confirmar contraseña',
+      create_account_btn: 'Crear cuenta',
+      create_account_link: 'Crear cuenta',
+      already_have: '¿Ya tienes una cuenta?',
+      already_have_btn: 'Inicia sesión',
+      dont_have: '¿No tienes una cuenta?',
+      dont_have_btn: 'Crear cuenta',
+      passwords_mismatch: 'Las contraseñas no coinciden',
+      welcome_msg: '¡Bienvenido, ',
+      signed_in_msg: '¡Sesión iniciada!',
+      su_terms: 'Acepto los Términos de Servicio y la Política de Privacidad',
+      su_age: 'Confirmo que tengo 13 años de edad o más'
+    }
+  };
+
+  // apply language to auth page
+  function applyAuthLanguage(lang) {
+    const map = AUTH_DICT[lang] || AUTH_DICT['en'];
+
+    // Signup pane
+    const suTitle = document.querySelector('#auth-signup h3');
+    if (suTitle) suTitle.textContent = map.signup_title;
+    const suSub = document.querySelector('#auth-signup p');
+    if (suSub) suSub.textContent = map.signup_sub;
+    const suName = document.getElementById('su-name');
+    if (suName) suName.placeholder = map.full_name_placeholder;
+    const suEmail = document.getElementById('su-email');
+    if (suEmail) suEmail.placeholder = map.email_placeholder;
+    const suPass = document.getElementById('su-password');
+    if (suPass) suPass.placeholder = map.password_placeholder;
+    const suPassConf = document.getElementById('su-password-confirm');
+    if (suPassConf) suPassConf.placeholder = map.confirm_password_placeholder;
+    const createBtn = document.querySelector('#signup-form button[type="submit"]');
+    if (createBtn) createBtn.textContent = map.create_account_btn;
+    const alreadyText = document.querySelector('#auth-signup p.mt-4');
+    if (alreadyText) {
+      alreadyText.childNodes.forEach(n => n.remove());
+      alreadyText.appendChild(document.createTextNode(map.already_have + ' '));
+      const signinBtn = document.createElement('button');
+      signinBtn.id = 'to-signin';
+      signinBtn.className = 'text-blue-400 hover:underline';
+      signinBtn.textContent = map.already_have_btn;
+      signinBtn.addEventListener('click', () => {
+        document.getElementById('auth-signup').classList.add('hidden');
+        document.getElementById('auth-signin').classList.remove('hidden');
+      });
+      alreadyText.appendChild(signinBtn);
+    }
+
+    // Update checkbox label texts so they localize with the rest of the page
+    try {
+      const termsLabel = document.getElementById('su-terms-label');
+      if (termsLabel && map.su_terms) {
+        // keep embedded links for Terms/Privacy in English by replacing only plain text when appropriate
+        // If the translation is a simple sentence without links, set textContent; otherwise replace innerHTML.
+        if (map.su_terms.includes('Terms') || map.su_terms.includes('Términos') || map.su_terms.includes('Términos')) {
+          // fallback: set plain text
+          termsLabel.textContent = map.su_terms;
+        } else {
+          // safe innerHTML update when translation expected to be full sentence (no links)
+          termsLabel.textContent = map.su_terms;
+        }
+      }
+      const ageLabel = document.getElementById('su-age-label');
+      if (ageLabel && map.su_age) ageLabel.textContent = map.su_age;
+    } catch (e) {}
+
+    // Signin pane
+    const siTitle = document.querySelector('#auth-signin h3');
+    if (siTitle) siTitle.textContent = map.signin_title;
+    const siSub = document.querySelector('#auth-signin p');
+    if (siSub) siSub.textContent = map.signin_sub;
+    const siEmail = document.getElementById('si-email');
+    if (siEmail) siEmail.placeholder = map.email_placeholder;
+    const siPass = document.getElementById('si-password');
+    if (siPass) siPass.placeholder = map.password_placeholder;
+    const siBtn = document.querySelector('#signin-form button[type="submit"]');
+    if (siBtn) siBtn.textContent = map.create_account_btn === 'Create Account' ? 'Sign in' : (map.signin_title || 'Sign in');
+    const dontHaveText = document.querySelector('#auth-signin p.mt-4');
+    if (dontHaveText) {
+      dontHaveText.childNodes.forEach(n => n.remove());
+      dontHaveText.appendChild(document.createTextNode(map.dont_have + ' '));
+      const toSignupBtn = document.createElement('button');
+      toSignupBtn.id = 'to-signup';
+      toSignupBtn.className = 'text-blue-400 hover:underline';
+      toSignupBtn.textContent = map.dont_have_btn;
+      toSignupBtn.addEventListener('click', () => {
+        document.getElementById('auth-signin').classList.add('hidden');
+        document.getElementById('auth-signup').classList.remove('hidden');
+      });
+      dontHaveText.appendChild(toSignupBtn);
+    }
+
+    // Toast messages mapping for use in this page
+    window.AUTH_TOAST = map;
+  }
+
+  // Toggle panes (attach once)
+  function wirePaneButtons() {
+    const toSignin = document.getElementById('to-signin');
+    const toSignup = document.getElementById('to-signup');
+    if (toSignin) {
+      toSignin.removeEventListener('click', toSignin._handler);
+      toSignin._handler = () => {
+        document.getElementById('auth-signup').classList.add('hidden');
+        document.getElementById('auth-signin').classList.remove('hidden');
+      };
+      toSignin.addEventListener('click', toSignin._handler);
+    }
+    if (toSignup) {
+      toSignup.removeEventListener('click', toSignup._handler);
+      toSignup._handler = () => {
+        document.getElementById('auth-signin').classList.add('hidden');
+        document.getElementById('auth-signup').classList.remove('hidden');
+      };
+      toSignup.addEventListener('click', toSignup._handler);
+    }
+  }
+
+  // Form handlers (use localized messages)
+  function wireForms() {
+    // Sign Up
+    const signupForm = document.getElementById('signup-form');
+    if (signupForm && !signupForm._wired) {
+      signupForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const pass = document.getElementById('su-password').value;
+        const confirm = document.getElementById('su-password-confirm').value;
+        const langMap = window.AUTH_TOAST || AUTH_DICT[localStorage.getItem('app_language') || 'en'];
+        if (pass !== confirm) { showToast(langMap.passwords_mismatch); return; }
+        const user = {
+          name: document.getElementById('su-name').value,
+          email: document.getElementById('su-email').value
+        };
+        localStorage.setItem('vidlo_user', JSON.stringify(user));
+        localStorage.setItem('vidlo_seen', '1');
+        showToast((langMap.welcome_msg || 'Welcome, ') + (user.name || user.email));
+        setTimeout(() => { location.href = '/'; }, 900);
+      });
+      signupForm._wired = true;
+    }
+
+    // Guest sign-in button (creates lightweight guest account and proceeds)
+    const guestBtn = document.getElementById('guest-signin');
+    if (guestBtn && !guestBtn._wired) {
+      guestBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const guest = { name: 'Guest', email: '' };
+        localStorage.setItem('vidlo_user', JSON.stringify(guest));
+        localStorage.setItem('vidlo_seen', '1');
+        const langMap = window.AUTH_TOAST || AUTH_DICT[localStorage.getItem('app_language') || 'en'];
+        showToast(langMap.signed_in_msg || 'Signed in successfully!');
+        setTimeout(() => { location.href = '/'; }, 700);
+      });
+      guestBtn._wired = true;
+    }
+
+    // Sign In
+    const signinForm = document.getElementById('signin-form');
+    if (signinForm && !signinForm._wired) {
+      signinForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('si-email').value;
+        localStorage.setItem('vidlo_user', JSON.stringify({ email }));
+        localStorage.setItem('vidlo_seen', '1');
+        const langMap = window.AUTH_TOAST || AUTH_DICT[localStorage.getItem('app_language') || 'en'];
+        showToast(langMap.signed_in_msg || 'Signed in successfully!');
+        setTimeout(() => { location.href = '/'; }, 900);
+      });
+      signinForm._wired = true;
+    }
+  }
+
+  // Apply language on load and listen for storage changes (settings page changes app_language)
+  document.addEventListener('DOMContentLoaded', function() {
+    const initial = localStorage.getItem('app_language') || 'en';
+    applyAuthLanguage(initial);
+    wirePaneButtons();
+    wireForms();
+  });
+
+  // When another window/tab (or the main app) changes the language, update the auth page
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'app_language') {
+      try { applyAuthLanguage(e.newValue || 'en'); } catch (err) {}
+    }
+  });
+
+  // Also provide an external API if scripts from the main app want to call directly
+  window.applyAuthLanguage = applyAuthLanguage;
+</script>
+<script src="/tv-spatial-nav.js"></script>
+</body>
+</html>

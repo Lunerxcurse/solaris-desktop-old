@@ -1,0 +1,364 @@
+<!doctype html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Watchlist — Vidlo</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <style>
+    body { background:#0A0A0A; color:#e5e2e1; font-family: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; min-height:100dvh }
+    /* keep layout similar to overlay */
+    header{ position:sticky; top:0; z-index:40; background:linear-gradient(180deg, rgba(10,10,10,.95), rgba(10,10,10,.9)); backdrop-blur:8px; border-bottom:1px solid rgba(255,255,255,0.03); }
+    .back { color:#a78bfa; padding:8px; border-radius:8px; display:inline-flex; align-items:center; gap:8px; margin-left:8px; border:1px solid rgba(255,255,255,0.03); background:transparent; text-decoration:none; }
+    main { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+    .watchlist-empty { width:100%; max-width:720px; display:flex; flex-direction:column; align-items:center; gap:18px; padding:40px 16px; box-sizing:border-box; }
+    .badge-wrap { width:128px; height:128px; border-radius:9999px; background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+    .badge-wrap .glow { position:absolute; inset:0; background:rgba(59,130,246,0.08); filter:blur(18px); }
+    .badge-wrap .icon { font-size:56px; color:#d1d5db; position:relative; z-index:2; }
+    .watchlist-title { font-size:20px; font-weight:700; color:#fff; text-align:center; }
+    .watchlist-desc { color:#9ca3af; text-align:center; max-width:420px; }
+    .explore-btn { background:#2563eb; color:#fff; padding:12px 28px; border-radius:9999px; display:inline-flex; align-items:center; gap:10px; border:none; cursor:pointer; box-shadow:0 12px 36px rgba(37,99,235,0.14); }
+    @media (max-width:900px){ .badge-wrap { width:96px; height:96px } .badge-wrap .icon { font-size:48px } }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex; align-items:center; gap:12px; padding:12px 16px;">
+      <a href="/" class="back" aria-label="Back to Home" title="Back to Home" tabindex="0" role="button">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+      </a>
+      <h1 style="margin:0; font-size:18px; font-weight:700; color:#fff;">Mi lista</h1>
+    </div>
+  </header>
+
+  <main>
+    <div class="watchlist-empty" role="region" aria-labelledby="watchlist-title">
+      <div class="badge-wrap" aria-hidden="true">
+        <div class="glow" aria-hidden="true"></div>
+        <span class="material-symbols-outlined icon" aria-hidden="true" style="font-variation-settings: 'FILL' 0;">bookmark</span>
+      </div>
+
+      <h2 id="watchlist-title" class="watchlist-title">Your list is empty</h2>
+      <p class="watchlist-desc">Save movies and shows you want to watch later so you can easily find them here.</p>
+
+      <button id="watchlist-explore" class="explore-btn" type="button">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">search</span>
+        <span>Explore Titles</span>
+      </button>
+    </div>
+  </main>
+
+  <script>
+    // Keep Explore button behaviour consistent with previous overlay (navigate back to home/search)
+    document.getElementById('watchlist-explore')?.addEventListener('click', function(){
+      try { location.href = '/'; } catch(e) { window.history.back(); }
+    });
+
+    // Render the watchlist page from localStorage and expose API for other scripts to call.
+    window.renderWatchlistPage = function(listItems){
+      try {
+        // prefer provided listItems (array) if passed, otherwise load from localStorage
+        let items = Array.isArray(listItems) ? listItems : [];
+        if(!items || items.length === 0){
+          try { items = JSON.parse(localStorage.getItem('watchlist') || '[]') || []; } catch(e){ items = []; }
+        }
+
+        const main = document.querySelector('main');
+        if(!main) return;
+
+        // Ensure there's a container for populated watchlist content
+        let container = document.getElementById('watchlist-populated');
+        if(!container){
+          container = document.createElement('div');
+          container.id = 'watchlist-populated';
+          container.style.width = '100%';
+          container.style.maxWidth = '1200px';
+          container.style.boxSizing = 'border-box';
+          container.style.padding = '24px';
+          container.style.display = 'flex';
+          container.style.flexDirection = 'column';
+          container.style.alignItems = 'center';
+          // insert before the empty state
+          const emptyNode = document.getElementById('empty-watchlist-placeholder');
+          if(emptyNode) main.insertBefore(container, emptyNode);
+          else main.appendChild(container);
+        }
+        container.innerHTML = '';
+
+        if(!items || items.length === 0){
+          // keep empty state visible and clear any populated content
+          const empty = document.querySelector('.watchlist-empty');
+          if(empty) empty.classList.remove('hidden');
+          return;
+        } else {
+          const empty = document.querySelector('.watchlist-empty');
+          if(empty) empty.classList.add('hidden');
+        }
+
+        // horizontal scroll row of cards that use the same markup/classes as homepage poster cards
+        const row = document.createElement('div');
+        row.className = 'flex gap-4 overflow-x-auto hide-scrollbar pb-2 snap-x';
+        row.style.alignItems = 'flex-start';
+        row.style.webkitOverflowScrolling = 'touch';
+        row.style.width = '100%';
+        container.appendChild(row);
+
+        const FALLBACK = '/no-image.png';
+
+        // helper to build a poster-card matching index.html structure
+        function buildPosterCard(item){
+          const title = item.title || item.Title || '';
+          const posterSrc = item.poster || item.Poster || '';
+          const type = item.type || item.Type || 'movie';
+          const imdbID = String(item.id || item.imdbID || '');
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'poster-card relative min-w-[120px] w-[140px] aspect-[2/3] rounded-lg overflow-hidden snap-start flex-shrink-0 group cursor-pointer';
+          wrapper.dataset.imdb = imdbID;
+          wrapper.tabIndex = 0;
+          wrapper.setAttribute('role', 'button');
+          wrapper.setAttribute('aria-label', title || 'Open details');
+          wrapper.dataset.tvFocus = 'true';
+
+          const img = document.createElement('img');
+          img.alt = title;
+          img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 poster-img';
+          img.src = posterSrc && posterSrc !== '' ? posterSrc : FALLBACK;
+          img.onerror = function(){ if(!this._tried){ this._tried = true; this.src = FALLBACK; } };
+
+          wrapper.appendChild(img);
+
+          // overlay title same as homepage
+          const overlay = document.createElement('div');
+          overlay.className = 'absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2';
+          const titleEl = document.createElement('span');
+          titleEl.className = 'text-sm text-white line-clamp-1';
+          titleEl.textContent = title;
+          overlay.appendChild(titleEl);
+          wrapper.appendChild(overlay);
+
+          // click / keyboard handlers open details on main app via query params (index.html handles deep-link)
+          const open = () => {
+            try {
+              const url = `/index.html?tmdb=${encodeURIComponent(imdbID)}&type=${encodeURIComponent(type)}`;
+              location.href = url;
+            } catch (e) {
+              console.warn('open details failed', e);
+            }
+          };
+
+          wrapper.addEventListener('click', (e) => { e.preventDefault(); open(); });
+          wrapper.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+          });
+
+          return wrapper;
+        }
+
+        // populate row with poster-card elements
+        for(const obj of items){
+          try{
+            const card = buildPosterCard(obj);
+            if(card) row.appendChild(card);
+          }catch(e){
+            console.warn('watchlist: failed to build card', e);
+          }
+        }
+
+        // keep watchlist synced across tabs
+        window.addEventListener('storage', (ev) => {
+          if(ev.key === 'watchlist'){
+            try { window.renderWatchlistPage(); } catch(e){}
+          }
+        });
+      } catch (err) {
+        console.warn('renderWatchlistPage error', err);
+      }
+    };
+
+    // Initial automatic render on page load
+    try { window.renderWatchlistPage(); } catch(e){}
+
+    // Ensure path includes /watchlist.html (so direct nav and back behave consistently)
+    (function ensureWatchlistPath() {
+      try {
+        const desiredPath = '/watchlist.html';
+        const loc = window.location;
+        if (loc.pathname !== desiredPath) {
+          history.replaceState(history.state, document.title, desiredPath + (loc.search || '') + (loc.hash || ''));
+        }
+      } catch (e) {}
+    })();
+
+    /* Localization for Watchlist page: toggles visible texts between English and Spanish
+       using localStorage key 'app_language'. Updates back link, page heading, empty-state
+       title/description, and Explore button; listens for storage changes and exposes
+       window.applyWatchlistLanguage for same-tab toggles. */
+    (function(){
+      const DICT = {
+        en: {
+          back: 'Back',
+          pageTitle: 'Watchlist',
+          watchlistTitle: 'Your list is empty',
+          watchlistDesc: 'Save movies and shows you want to watch later so you can easily find them here.',
+          exploreBtn: 'Explore Titles'
+        },
+        es: {
+          back: 'Atrás',
+          pageTitle: 'Mi lista',
+          watchlistTitle: 'Tu lista está vacía',
+          watchlistDesc: 'Guarda películas y series que quieras ver más tarde para encontrarlas fácilmente aquí.',
+          exploreBtn: 'Explorar títulos'
+        }
+      };
+
+      function applyWatchlistLanguage(lang){
+        try{
+          lang = lang || 'en';
+          const map = DICT[lang] || DICT.en;
+
+          // Back anchor (prefer .back link) — keep only the icon visible, update title/aria-label for accessibility
+          const backLink = document.querySelector('a.back') || document.querySelector('a[aria-label="Back to Home"]') || document.querySelector('a[title="Back to Home"]');
+          if(backLink){
+            if(!backLink.dataset.orig) backLink.dataset.orig = backLink.textContent.trim();
+            // preserve icon if present and remove any other text nodes (do NOT append visible text)
+            const icon = backLink.querySelector('.material-symbols-outlined');
+            if(icon){
+              Array.from(backLink.childNodes).forEach(n => { if(n !== icon) n.remove(); });
+              backLink.appendChild(icon);
+            }
+            // keep accessible attributes up to date but avoid adding visible text
+            backLink.title = map.back;
+            backLink.setAttribute('aria-label', map.back);
+          }
+
+          // Page heading (h1)
+          const h1 = document.querySelector('header h1') || document.querySelector('h1');
+          if(h1){
+            if(!h1.dataset.orig) h1.dataset.orig = h1.textContent.trim();
+            h1.textContent = map.pageTitle;
+          }
+
+          // Watchlist title and description in the main empty state
+          const wlTitle = document.getElementById('watchlist-title');
+          if(wlTitle){
+            if(!wlTitle.dataset.orig) wlTitle.dataset.orig = wlTitle.textContent.trim();
+            wlTitle.textContent = map.watchlistTitle;
+          }
+          const wlDesc = document.querySelector('.watchlist-desc');
+          if(wlDesc){
+            if(!wlDesc.dataset.orig) wlDesc.dataset.orig = wlDesc.textContent.trim();
+            wlDesc.textContent = map.watchlistDesc;
+          }
+
+          // Explore button: preserve icon then update label
+          const explore = document.getElementById('watchlist-explore');
+          if(explore){
+            if(!explore.dataset.orig) explore.dataset.orig = explore.textContent.trim();
+            const icon = explore.querySelector('.material-symbols-outlined');
+            if(icon){
+              Array.from(explore.childNodes).forEach(n => { if(n !== icon) n.remove(); });
+              explore.appendChild(icon);
+              const txt = document.createElement('span'); txt.style.marginLeft = '0.4rem'; txt.textContent = map.exploreBtn;
+              explore.appendChild(txt);
+            } else {
+              explore.textContent = map.exploreBtn;
+            }
+          }
+
+          // update document title for context
+          try { document.title = map.pageTitle + ' — Vidlo'; } catch(e){}
+        }catch(e){
+          console.warn('applyWatchlistLanguage failed', e);
+        }
+      }
+
+      // Apply initially based on stored value (default: en)
+      try {
+        const stored = localStorage.getItem('app_language') || 'en';
+        applyWatchlistLanguage(stored);
+      } catch(e){ applyWatchlistLanguage('en'); }
+
+      // react to storage changes from settings or other tabs
+      window.addEventListener('storage', (ev) => {
+        if(ev.key === 'app_language'){
+          applyWatchlistLanguage(ev.newValue || 'en');
+        }
+      });
+
+      // expose for same-tab immediate toggles
+      window.applyWatchlistLanguage = applyWatchlistLanguage;
+    })();
+  </script>
+
+  <script>
+    // Ensure dynamically-created poster cards are marked as TV-focusable and focus the first card on load.
+    (function enhanceWatchlistForTvNav(){
+      // Mark any existing poster cards (in case renderWatchlistPage already ran)
+      function markCards(root=document){
+        try {
+          root.querySelectorAll('.poster-card, [data-imdb]').forEach(el => {
+            // make keyboard/remote focusable
+            if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+            if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+            el.setAttribute('data-tv-focus', 'true');
+            // ensure outline shows via tv-spatial-nav :focus-visible styles
+          });
+        } catch (e) { console.warn('markCards failed', e); }
+      }
+
+      // Focus the first card if nothing is focused (helps TV remotes)
+      function focusFirstCard(){
+        try {
+          const active = document.activeElement;
+          if (active && active !== document.body && active !== document.documentElement) return;
+          const first = document.querySelector('.poster-card, [data-imdb], main .watchlist-populated .poster-card, #watchlist-populated .poster-card');
+          if (first) {
+            try { first.focus({ preventScroll: true }); } catch { first.focus(); }
+          }
+        } catch (e) { console.warn(e); }
+      }
+
+      // Observe changes to the watchlist-populated container and mark new cards
+      const container = document.getElementById('watchlist-populated') || document.querySelector('main');
+      if (container) {
+        markCards(container);
+        const mo = new MutationObserver((mutations) => {
+          markCards(container);
+          // After new nodes appended, try focusing the first card once
+          focusFirstCard();
+        });
+        mo.observe(container, { childList: true, subtree: true });
+      } else {
+        // fallback: mark on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', () => { markCards(); focusFirstCard(); });
+      }
+
+      // Also ensure that renderWatchlistPage marks cards when it creates them
+      const oldRender = window.renderWatchlistPage;
+      if (typeof oldRender === 'function') {
+        window.renderWatchlistPage = function(...args){
+          const result = oldRender.apply(this, args);
+          // after a microtask, mark and focus
+          setTimeout(() => { markCards(); focusFirstCard(); }, 30);
+          return result;
+        };
+      }
+
+      // Accessibility: Enter/Space should activate a card by navigating to index.html deep-link (cards already wired)
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const el = document.activeElement;
+        if (!el) return;
+        if (el.classList && (el.classList.contains('poster-card') || el.hasAttribute('data-imdb'))) {
+          e.preventDefault();
+          el.click();
+        }
+      });
+    })();
+  </script>
+
+  <script src="/tv-spatial-nav.js"></script>
+</body>
+</html>

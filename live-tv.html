@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vidlo - IPTV Categories</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-surface": "#e2e2e8",
+                    "tertiary-container": "#8a91a2",
+                    "on-tertiary": "#29303f",
+                    "on-secondary-fixed-variant": "#434751",
+                    "surface-bright": "#37393e",
+                    "surface-container-high": "#282a2e",
+                    "primary": "#adc7ff",
+                    "surface-container": "#1e2024",
+                    "on-tertiary-fixed-variant": "#404756",
+                    "surface-container-low": "#1a1c20",
+                    "primary-fixed": "#d8e2ff",
+                    "primary-fixed-dim": "#adc7ff",
+                    "on-background": "#e2e2e8",
+                    "surface-tint": "#adc7ff",
+                    "on-tertiary-fixed": "#151c29",
+                    "surface": "#111318",
+                    "tertiary": "#c0c6d9",
+                    "inverse-on-surface": "#2f3035",
+                    "tertiary-fixed-dim": "#c0c6d9",
+                    "error-container": "#93000a",
+                    "on-error-container": "#ffdad6",
+                    "on-error": "#690005",
+                    "tertiary-fixed": "#dce2f6",
+                    "secondary-fixed": "#dfe2ef",
+                    "on-surface-variant": "#c1c6d7",
+                    "on-secondary": "#2c303a",
+                    "error": "#ffb4ab",
+                    "on-secondary-fixed": "#181c25",
+                    "on-primary": "#002e68",
+                    "on-surface": "#e2e2e8",
+                    "secondary-container": "#454953",
+                    "on-secondary-container": "#b5b8c5",
+                    "on-primary-container": "#00285b",
+                    "surface-variant": "#333539",
+                    "surface-dim": "#111318",
+                    "secondary": "#c3c6d3",
+                    "outline": "#8b90a0",
+                    "inverse-primary": "#005bc0",
+                    "secondary-fixed-dim": "#c3c6d3",
+                    "primary-container": "#4a8eff",
+                    "surface-container-highest": "#333539",
+                    "on-primary-fixed": "#001a41",
+                    "background": "#111318",
+                    "outline-variant": "#414754",
+                    "on-tertiary-container": "#232a38",
+                    "surface-container-lowest": "#0c0e12",
+                    "on-primary-fixed-variant": "#004493"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "margin-desktop": "48px",
+                    "xl": "32px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "base": "8px",
+                    "xs": "4px",
+                    "sm": "12px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "display-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "display-md": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                    "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                    "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500" }],
+                    "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                    "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                    "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                    "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Subtle glow for cards on hover */
+        .card-hover-effect:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 24px rgba(173, 199, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video-minimal.js"></script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col pb-safe">
+<button onclick="window.history.back()" aria-label="Back" title="Back" class="text-indigo-500 p-2 rounded-full fixed left-4 top-4 z-50 bg-transparent">
+  <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<!-- TopAppBar -->
+<!-- Main Content -->
+<main class="flex-grow px-margin-mobile md:px-margin-desktop py-md">
+<div class="max-w-7xl mx-auto">
+<h2 class="text-headline-md font-headline-md mb-gutter text-on-surface">Browse by Region</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-gutter">
+<!-- MOVED: All Channels placed at top-left to be first in the grid -->
+<a id="all-channels-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/regions/amer.m3u,https://iptv-org.github.io/iptv/regions/eur.m3u,https://iptv-org.github.io/iptv/regions/asia.m3u,https://iptv-org.github.io/iptv/regions/afr.m3u,https://iptv-org.github.io/iptv/regions/oce.m3u,https://iptv-org.github.io/iptv/countries/de.m3u,https://iptv-org.github.io/iptv/countries/fr.m3u,https://iptv-org.github.io/iptv/countries/uk.m3u,https://iptv-org.github.io/iptv/countries/ca.m3u,https://iptv-org.github.io/iptv/countries/es.m3u,https://iptv-org.github.io/iptv/countries/it.m3u,https://iptv-org.github.io/iptv/countries/br.m3u,https://iptv-org.github.io/iptv/countries/us.m3u,https://iptv-org.github.io/iptv/categories/sports.m3u,https://iptv-org.github.io/iptv/categories/kids.m3u,https://iptv-org.github.io/iptv/categories/news.m3u,https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8,https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/refs/heads/main/playlists/plex_all.m3u" title="Open All Channels (All Categories)">
+  <img alt="All Channels" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" style="filter: brightness(1.18) contrast(1.03); opacity: 0.92; transition: opacity .28s ease, filter .18s ease;" src="/ChatGPT Image Jun 21, 2026, 03_09_57 AM.png" />
+  <div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+  <div class="absolute bottom-0 left-0 p-md w-full">
+    <h3 class="text-headline-md font-headline-md text-white">All Channels</h3>
+  </div>
+</a>
+
+<!-- Category Card: American Channels -->
+<a id="amer-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/regions/amer.m3u" title="Open American Channels">
+<img alt="American Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A cinematic night view of the New York City skyline with glowing skyscrapers and city lights reflecting on the water. The scene is rendered in a premium, high-fidelity dark mode aesthetic with deep navy shadows and subtle electric blue highlights, evoking a sophisticated global entertainment feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi94OQJZFZD4YEh9scR_c9rU2HrcCMtu7twb16doN1yRCVy_WmowLvose7KeWgHl7Jcdo8P1hAAY9Py9BbGvGarSsuwMQvTfOadmwR2cOhkW0Q01nzO16Eiz1Nnjc27nf4_HYxWJPCxk1ZKeTMYyn5pCH4hl__H1sbtVxevRZfB047s7ZKbWKTyD0KqQ-hCdE5Rkxn_oZ2EWIdSEZL2LK4XQnfm51I9i2gga6N_gBhWQQ4FGIoWRng67TDrCT4A2DPpQSum1Xlm24"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">American Channels</h3>
+</div>
+</a>
+
+
+<!-- Category Card: European Channels -->
+<a id="eur-link" data-m3u="https://iptv-org.github.io/iptv/regions/eur.m3u" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#">
+<img alt="European Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A stunning twilight view of the Eiffel Tower in Paris, surrounded by historic architecture. The image features a dark, premium aesthetic with deep contrasting tones, subtle ambient glows, and a quiet, sophisticated atmosphere suitable for a high-end streaming interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5_PuR_sIWci1UFPyHSQIJIhl18uRw1iWvQ9mgs4oy8Q4NxudPV02d_3PI8Zg-sWPlb9LGr8k1tV9tfJSsYIF7qZThbrAohcBabWATbwKsTxv8OjDb4Ts8hwxdy_ZnVMrNiCPHfbHMqciBAAfjEen0SUMXStR8XCXd1tL-Ozke9d6JWsjQE-Mehd1dYb9wMxu_8nMjcDfsOqRSp5gsDEHQZVEzDsfyZ1W1bzS4rj6h6YslINWOi0KggsS6PiwfcE8TvvtebUR97Ww"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">European Channels</h3>
+</div>
+</a>
+<!-- Category Card: Asian Channels -->
+<a data-m3u="https://iptv-org.github.io/iptv/regions/asia.m3u" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#">
+<img alt="Asian Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="Stylized Asian continent icon, flat design, vibrant colors, flag-style aesthetic, representing the Asian region consistently with other flag icons." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBkpBbcP9o8sUDE0umERLKaWWGM3HDtMHZeeulyT3OP3ehT08vB0JdTYJRSi6yhpbv1dbm0VhUXwfWKrdkhQakJ0RHmxPo-OYgX3c6TuEivn9qBODKKta-yziXFFCBLcfjclCBIx6xvAWhuj6VDs65jmYYoNHvbzdbw21OLFlW0E33MnOvNSCjvTUVWSM7Tp1zuN2pfre2WMO6WM4BmmdJkuU0o7Eotc5yxbhTpCaQAA8wDFLjhghA1qG8_BCnNOMRj50rtAoHw4I"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">Asian Channels</h3>
+</div>
+</a>
+<!-- Category Card: African Channels -->
+<a id="afr-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/regions/afr.m3u" title="Open African Channels">
+<img alt="African Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A breathtaking sunset over an African savanna, featuring the silhouetted acacia trees against a dramatic, moody sky. The color palette is rich yet subdued, fitting perfectly into a sophisticated, dark-themed streaming interface with high-fidelity visuals." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWzFjzKQQ4j5c5bd9uuCa9MkA_POwSDBbM_qZoWNvEGCLK_sF14Lw1EbLFq1kNH1DlwmACgueDH2mh0QCl2qXtjwhTLErSphejAhAdUKphNPpqIHay3ZrQ9xMLkF9zcWQPfEPK22C7xBX063KT7qDk9CmB4Fx3nQUiNnYjEy0049Mna4sUfh-y9_Yqvo0uWF0E_CsA68BtjtAky8HJU6Ko2Kg1cerZVCE8SoFSznP9pnoQK7oNbAQHbT6ievEpn8359F3lhE8QIng"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">African Channels</h3>
+</div>
+</a>
+<!-- Category Card: Oceania Channels -->
+<a id="oce-link" data-m3u="https://iptv-org.github.io/iptv/regions/oce.m3u" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#">
+<img alt="Oceania Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A majestic nighttime view of the Sydney Opera House and Harbour Bridge. The scene is dramatic and deeply shadowed, styled for a high-end dark mode UI, with sharp focus and subtle, elegant lighting reflecting off the water." src="https://lh3.googleusercontent.com/aida-public/AB6AXuANQToSHB5WIKyEaFt5fyCnB-gLn5ckMoc2Xm99UO1FXB2cs7m0X_FNF3pagLFlK9eHvTfUgDXnSyF30CexOvNn_U5CBFP1A2LJkQoh_tHaF64rvMncSnt-dN5zDXmnIWCgNgkq5J6FsBfHWlFegpUP-1v8-Rdea67u448Q_zqfTX-G--_cZh7IL9xoJ3NWUba0aLJhNsiQNzZToFEXg827X-waW1qR4K5iaCNmM2g8AqWvMHdY2RpJKoqaeF7KgmrWWdnPU2RNF3Q"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">Oceania Channels</h3>
+</div>
+</a>
+<!-- Category Card: German Channels -->
+<a id="ger-link" data-m3u="https://iptv-org.github.io/iptv/countries/de.m3u" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#">
+<img alt="German Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A striking view of the Brandenburg Gate in Berlin at dusk. The architecture is illuminated softly against a dark, moody twilight sky, providing a premium, cinematic background suitable for a sleek media center application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFEsCZCtm3s38ED55xCFKgmGp1aaxLsbdFW4oTU4wAey0iExRMvd2bGD8jEI-oXApaqik5z1uGX0ONh9vN0cy_e8NQ4w1JTfPkDVb4rmRKFHh2VvY0mO7sKXa76fG8nXxt8ScYkFhq4ExW84z5bB3cw7WhYgZCOBE-uz_w1ySut4lEWQsyJ-z1ogn4IX7S_dUC06Xd7n8O42kMNMr8v_A6k4jd0W3KwnwW8qqzolbQt7OWUGwjtM2AIZygwBjDWAdsXyGZb6XJmi0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">German Channels</h3>
+</div>
+</a>
+<!-- Category Card: French Channels -->
+<a id="fra-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/countries/fr.m3u">
+<img alt="French Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="An elegant evening shot of the Louvre Pyramid in Paris, glowing gently against a deep indigo night sky. The high-contrast, premium aesthetic aligns with a dark glassmorphic UI, emphasizing sophisticated entertainment content." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTS6bWM9GAaUdWCcqXEttlpuQSIDLcWnqjdWPZudHlO-Lgp8irClBrA640VpTzohVX4Ry8MmYeS-RWk6wT3nMgXH2T1vCVl_y06iyw3XgG14Qe2GbFZIFf2-i45DVxM_wIvUIZEmi91LkD_aq__L-nH_MKJlXZz5cEVGtclyUIGIM2BeJMKhHFIG6AYCsuBJLPG1R-zJIp6vW5z3CzSUCQOlDSXJJoTYcistGs7F7Klm45dwaVk0FB0-5LQyV1v59-1TzKGg9pcqE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">French Channels</h3>
+</div>
+</a>
+<!-- Category Card: UK Channels -->
+<a class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/countries/uk.m3u">
+<img alt="UK Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A moody, cinematic view of Big Ben and the Houses of Parliament in London at night. The lighting is dramatic, highlighting the historic architecture against a dark backdrop, perfect for a high-end streaming service category card." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAktU4tew32KaYapMRf1Js_0nidLSAvfYs2CHJJzRL5kT2cULMU5qU_mbPzy2CyTej6Tr90ao26DgrgdlGWl6sje_3F3UAQ2mZsrj18xekQJHCsaP2uN4bTXxNh-_vJe7iQZyH-cyK76SXz4OdCiWqUV4mxCFCDIAbQXzj8S41ZueFlO7i6_oghw_twFuNlPq2m5eHM1yBeGavZ8tubETBkznCu3nxHjLEkrKNW12PHWX0ctAF_FAH-KkGwuWw3bHl7q4izd7mlIwI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">UK Channels</h3>
+</div>
+</a>
+<!-- Category Card: Canadian Channels -->
+<a id="can-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/countries/ca.m3u" title="Open Canadian Channels">
+<img alt="Canadian Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A sweeping night view of the Toronto skyline featuring the CN Tower, with city lights reflecting in Lake Ontario. The image is styled with deep, rich dark tones and subtle glowing accents, fitting a modern, premium UI design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuASBH4y01CV-DZ-LADnnrWst5LjRAqpKdXIvoMYkSnxeItDojY4MX6bqC_VLHQ6DcSiN-MfV3TLnSI22I48QGnOTnOHxFm-qi5V1AqH_jZoVT62OPYlFwB33e1W3NtSJkhGsuBxUxRbxs4yNhz9vzCGI4VDz-72nfxopLp5hKy6ZeVG-OROBodJD7QYXKWHZIbz8nPic_k8CLkE7ynf1urbCD-zQ0qezC73aPT5J_8spiv1iosJrmsjmzZuy1Xko_7QApB5MKHO2d4"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">Canadian Channels</h3>
+</div>
+</a>
+<!-- Category Card: Spanish Channels -->
+<a data-m3u="https://iptv-org.github.io/iptv/countries/es.m3u" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#">
+<img alt="Spanish Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A dramatic twilight photo of the Sagrada Familia in Barcelona. The intricate architecture is softly illuminated against a dark, moody sky, creating a refined and cinematic visual for a high-end content discovery interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9n7ibCrtTdt3l657ZZFPUVfz4jMipkEYcWJOMNtDgQVeUCQX3WdLb1frspfvFCLjttrd5PUQ-g9H4c1Z_04Vc7lqT2mATk1XIyADDDqZtF3Jht4hyJ4PJrb8wvlwr02ebFYjkqHFc0ufxnRd56PY4HGZynesmsU0gSeDpxjLu0Ds6CkwnF-SBZiINqH7m-i4DrDxv8I4aZzFcZg6Q0XrIvhg-dwLByokDlhkxh2TloOsOY-mTNS7_528wZoAhYKlmkFqFFkeDcWY"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">Spanish Channels</h3>
+</div>
+</a>
+<!-- Category Card: Italian Channels -->
+<a data-m3u="https://iptv-org.github.io/iptv/countries/it.m3u" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#">
+<img alt="Italian Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A romantic, shadowy view of the Colosseum in Rome at night. Warm, subtle spotlights highlight the ancient stone, set against a deep black sky, providing an elegant and high-quality backdrop for a media streaming platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJqSK4VKqZ4rED8EBEAaGSlKZw0Vxgfs9_KbdLK3dFEHXQZepOaCDdTyuRVLDiVuKsbPbTRtEoShFQPJ4ThJ-hixjbDNiJTDXva3vREG16jMjkbJcoXjwk0nMOy6kfPlassUKyGyitsyyjac-rWJd-ixzX_ryMGGhWgBsj9zBcHO9lFGF1767NZvMPFUjB2BWlYYbeIpLzA_LkONt1itOEgAbgxg6Tl01dkNoSt1Lp1v0GCDI1vbV3JQKtuGJA6AhaJgTWAgsiRL0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">Italian Channels</h3>
+</div>
+</a>
+<!-- Category Card: Brazilian Channels -->
+<a data-m3u="https://iptv-org.github.io/iptv/countries/br.m3u" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#">
+<img alt="Brazilian Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A stunning aerial night view of Rio de Janeiro, with the illuminated Christ the Redeemer statue overlooking the glowing city and dark ocean. The scene perfectly matches a dark mode, premium UI aesthetic with deep contrasts and sophisticated lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDksD2q35-NP_Oqr4wHjyUU1W1x860Mw4eiviVWRJ5Q-wxYnvKi8RtHeiFunPMUHKSL6deVXNTDVgvweiHQkwSfEc7G3I_Nrg_W96gWnHXnhqdHeXanIKdiVrVE0drdDtQYFa9O7W2w2re43ZQIhZUltiPfiY8FXoG7mT2EbQYei0DcUIPwJavWu3M82Xfry2oGoRgeDm-Gno_3KCI_fEp_hfp4c3YaXrM0w2A0sAHPhxBppGLws3aIJ0QelTK_mF5wW8IktXWplGM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">Brazilian Channels</h3>
+</div>
+</a>
+
+<!-- Moved: USA Channels (placed next to Brazilian Channels) -->
+
+<!-- NEW: Sport TV Channels -->
+<a id="sport-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/categories/sports.m3u" title="Open Sport TV Channels">
+  <img alt="Sport TV Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="Sport category image (NBA logo)" src="/download (2).png"/>
+  <div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+  <div class="absolute bottom-0 left-0 p-md w-full">
+    <h3 class="text-headline-md font-headline-md text-white">Sport TV Channels</h3>
+  </div>
+</a>
+
+<!-- NEW: Kids TV Channels -->
+<a id="kids-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/categories/kids.m3u" title="Open Kids TV Channels">
+  <img alt="Kids TV Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A colorful, playful scene with balloons and soft pastel tones styled for a premium dark-themed UI." src="/pbs-kids-d-1024x470.jpg"/>
+  <div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+  <div class="absolute bottom-0 left-0 p-md w-full">
+    <h3 class="text-headline-md font-headline-md text-white">Kids Channels</h3>
+  </div>
+</a>
+
+<!-- NEW: News TV Channels -->
+<a id="news-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/categories/news.m3u" title="Open News TV Channels">
+  <img alt="News TV Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A dramatic newsroom panorama with global maps and ticker lines, styled for a premium dark-themed UI." src="/BBC News.png"/>
+  <div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+  <div class="absolute bottom-0 left-0 p-md w-full">
+    <h3 class="text-headline-md font-headline-md text-white">News Channels</h3>
+  </div>
+</a>
+
+<!-- NEW: Glotovpa TV Channels -->
+<a id="glotovpa-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8" title="Open Glotovpa TV Channels">
+  <img alt="Glotovpa TV Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A premium dark-themed cinematic background suitable for channel categories." src="/ChatGPT Image Jun 17, 2026, 06_25_55 AM.png"/>
+  <div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+  <div class="absolute bottom-0 left-0 p-md w-full">
+    <h3 class="text-headline-md font-headline-md text-white">Glotovpa TV Channels</h3>
+  </div>
+</a>
+
+
+
+
+
+<!-- NEW: Plex TV Channels -->
+<a id="plex-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/refs/heads/main/playlists/plex_all.m3u" title="Open Plex TV Channels">
+  <img alt="Plex TV Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="Plex TV category image" src="/weBCPha4ZZa4wymWwyitpK.png"/>
+  <div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+  <div class="absolute bottom-0 left-0 p-md w-full">
+    <h3 class="text-headline-md font-headline-md text-white">Plex TV Channels</h3>
+  </div>
+</a>
+
+
+
+<a id="usa-link" class="card-hover-effect group relative block w-full aspect-video rounded-[16px] overflow-hidden border border-white/10 bg-surface-container-high transition-all duration-300" href="#" data-m3u="https://iptv-org.github.io/iptv/countries/us.m3u" title="Open USA Channels">
+<img alt="USA Channels" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" data-alt="A cinematic night view of the New York City skyline with glowing skyscrapers and city lights reflecting on the water. The scene is rendered in a premium, high-fidelity dark mode aesthetic with deep navy shadows and subtle electric blue highlights, evoking a sophisticated global entertainment feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi94OQJZFZD4YEh9scR_c9rU2HrcCMtu7twb16doN1yRCVy_WmowLvose7KeWgHl7Jcdo8P1hAAY9Py9BbGvGarSsuwMQvTfOadmwR2cOhkW0Q01nzO16Eiz1Nnjc27nf4_HYxWJPCxk1ZKeTMYyn5pCH4hl__H1sbtVxevRZfB047s7ZKbWKTyD0KqQ-hCdE5Rkxn_oZ2EWIdSEZL2LK4XQnfm51I9i2gga6N_gBhWQQ4FGIoWRng67TDrCT4A2DPpQSum1Xlm24"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent from-background"></div>
+<div class="absolute bottom-0 left-0 p-md w-full">
+<h3 class="text-headline-md font-headline-md text-white">USA Channels</h3>
+</div>
+</a>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+
+<script>
+(function(){
+  // Generic handler: any card with a data-m3u attribute will fetch that playlist and render the playlist/player UI.
+  const cards = document.querySelectorAll('[data-m3u]');
+  if(!cards || cards.length === 0) return;
+
+  function parseM3uToArray(m3uContent){
+    const lines = m3uContent.replace(/\r/g,'').split('\n');
+    const out = [];
+    let current = null;
+    for(const raw of lines){
+      const line = raw.trim();
+      if(!line) continue;
+      if(line.startsWith('#EXTINF:')){
+        const info = line.substring(8).trim();
+        const tvgLogoMatch = info.match(/tvg-logo="([^"]*)"/);
+        const groupTitleMatch = info.match(/group-title="([^"]*)"/);
+        const nameMatch = info.match(/,(.*)/);
+        current = {
+          logo: tvgLogoMatch ? tvgLogoMatch[1] : '',
+          group: groupTitleMatch ? groupTitleMatch[1] : 'General',
+          name: nameMatch ? nameMatch[1].trim() : 'Unknown Channel',
+          url: ''
+        };
+      } else if(!line.startsWith('#')){
+        if(current){
+          current.url = line;
+          out.push(current);
+          current = null;
+        }
+      }
+    }
+    return out;
+  }
+
+  function renderPlaylistUI(channels, sourceLabel){
+    const main = document.querySelector('main');
+    if(!main) return;
+
+    // Build localized UI with identifiable IDs for dynamic updates
+    // Layout: left column = channel list (fills full height), right column = video player (flexible)
+    const html = `
+      <div style="padding:16px;max-width:1400px;margin:0 auto;color:#e5e2e1;font-family:Inter,system-ui;position:relative;min-height:calc(100vh - 48px);">
+        <button id="playlist-back" aria-label="Back" title="Back" style="position:fixed;left:16px;top:16px;z-index:999;background:transparent;border-radius:9999px;padding:8px;border:1px solid rgba(255,255,255,0.04);color:#a78bfa;cursor:pointer;">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+        </button>
+
+        <div style="display:flex;gap:20px;height:100%;align-items:stretch;">
+          <!-- LEFT: channel list (fills full vertical space) -->
+          <aside id="playlist-left" style="flex-basis: min(46%, 520px); width: min(46%, 520px); min-width:280px; display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <h2 id="playlist-title" style="margin:0;font-size:18px;flex:0 0 auto;">${sourceLabel || 'Channels'}</h2>
+              <div id="playlist-count" style="margin-left:auto;color:#9ca3af;font-size:13px">${channels.length} channels</div>
+            </div>
+
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="playlist-filter" placeholder="Search Channels" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#0F0F10;color:#e5e2e1;">
+            </div>
+
+            <div id="playlist-list" style="flex:1;display:flex;flex-direction:column;gap:8px;overflow:auto;padding-right:8px;padding-top:6px;max-height:calc(100vh - 220px);"></div>
+          </aside>
+
+          <!-- RIGHT: player area -->
+          <section id="playlist-right" style="flex:1;display:flex;flex-direction:column;gap:12px;align-items:stretch;">
+            <div id="playlist-player-wrap" style="width:640px;max-width:100%;height:360px;background:#000;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex:0 0 auto;margin:0 auto;" data-tv-focus="true" tabindex="0" role="button">
+              <div id="playlist-video" style="width:100%;height:100%;background:#000;display:block">
+                <video-player>
+                  <video-minimal-skin>
+                    <video src="https://stream.mux.com/BV3YZtogl89mg9VcNBhhnHm02Y34zI1nlMuMQfAbl3dM/highest.mp4" playsinline style="width:100%;height:100%;object-fit:contain;background:#000;"></video>
+                  </video-minimal-skin>
+                </video-player>
+              </div>
+              <div id="player-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#000;color:#9ca3af;font-size:14px;">
+                <span id="player-placeholder-text">Select a channel to start playback</span>
+              </div>
+            </div>
+
+            <!-- fullscreen button + optional lower controls / info -->
+            <div style="display:flex;justify-content:center;margin-top:4px;">
+              <button id="fullscreen-btn" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.12);color:#e5e2e1;padding:8px 12px;border-radius:8px;cursor:pointer;min-width:180px;box-shadow:0 6px 18px rgba(0,0,0,0.5);backdrop-filter:blur(6px);transition:box-shadow .12s ease, transform .12s ease, border-color .12s ease;">
+                <span class="material-symbols-outlined" style="vertical-align:middle;margin-right:8px">open_in_full</span>
+                <span id="fullscreen-btn-label">Open in fullscreen</span>
+              </button>
+            </div>
+
+            <div id="playlist-controls" style="display:flex;gap:12px;align-items:center;">
+              <div id="current-channel-info" style="flex:1;color:#e5e2e1;font-size:14px;"></div>
+              <div style="color:#9ca3af;font-size:13px">HD</div>
+            </div>
+          </section>
+        </div>
+      </div>
+    `;
+    main.innerHTML = html;
+
+    // element refs
+    const vid = document.querySelector('#playlist-video video');
+    const playerPlaceholder = document.getElementById('player-placeholder');
+    const playerPlaceholderText = document.getElementById('player-placeholder-text');
+    const list = document.getElementById('playlist-list');
+    const filter = document.getElementById('playlist-filter');
+    const playerWrap = document.getElementById('playlist-player-wrap');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const fullscreenBtnLabel = document.getElementById('fullscreen-btn-label');
+    const backBtn = document.getElementById('playlist-back');
+    const titleEl = document.getElementById('playlist-title');
+    const countEl = document.getElementById('playlist-count');
+
+    // wire back button to go back to categories page (preserve previous behaviour)
+    backBtn.addEventListener('click', () => { location.replace('/live-tv.html'); });
+
+    // fullscreen button behavior: toggle fullscreen for the playerWrap element
+    if (fullscreenBtn && playerWrap) {
+      // Detect likely TV platforms and only reveal the fullscreen control for them.
+      function isLikelyTV() {
+        try {
+          const ua = (navigator.userAgent || '').toLowerCase();
+          // common TV / set-top identifiers
+          const tvTokens = ['smarttv','googletv','appletv','hbbtv','netcast','viera','roku','aft','bravia','tv','apple tv','google tv','android tv'];
+          for (const t of tvTokens) if (ua.includes(t)) return true;
+          // prefer coarse pointer & no hover as a weaker heuristic
+          if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(hover: hover)').matches) return true;
+        } catch (e) {}
+        return false;
+      }
+
+      // show/hide based on detection
+      try {
+        if (isLikelyTV()) {
+          fullscreenBtn.style.display = 'inline-block';
+        } else {
+          fullscreenBtn.style.display = 'none';
+        }
+      } catch (e) {
+        fullscreenBtn.style.display = 'none';
+      }
+
+      const enterFullscreen = async () => {
+        try {
+          if (playerWrap.requestFullscreen) {
+            await playerWrap.requestFullscreen();
+          } else if (playerWrap.webkitRequestFullscreen) {
+            await playerWrap.webkitRequestFullscreen();
+          } else if (playerWrap.msRequestFullscreen) {
+            await playerWrap.msRequestFullscreen();
+          }
+        } catch (e) {
+          console.warn('Fullscreen request failed', e);
+        }
+      };
+      const exitFullscreen = async () => {
+        try {
+          if (document.exitFullscreen) {
+            await document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            await document.webkitExitFullscreen();
+          } else if (document.msExitFullscreen) {
+            await document.msExitFullscreen();
+          }
+        } catch (e) {
+          console.warn('Exit fullscreen failed', e);
+        }
+      };
+
+      fullscreenBtn.addEventListener('click', async () => {
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+        if (!isFs) {
+          await enterFullscreen();
+        } else {
+          await exitFullscreen();
+        }
+      });
+
+      const fsChangeHandler = () => {
+        const isFsNow = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+        try {
+          fullscreenBtnLabel.textContent = isFsNow ? 'Exit fullscreen' : 'Open in fullscreen';
+        } catch (e) {}
+      };
+      document.addEventListener('fullscreenchange', fsChangeHandler);
+      document.addEventListener('webkitfullscreenchange', fsChangeHandler);
+      document.addEventListener('msfullscreenchange', fsChangeHandler);
+    }
+
+    if(vid) vid.style.display = 'none';
+    if(playerPlaceholder) playerPlaceholder.style.display = 'flex';
+
+    function applyListMaxHeight(){
+      try{
+        // Use a fixed, predictable height for the left column and channel list so it never reaches the absolute bottom.
+        // Reserve space for the top header/back button and the player area on the right.
+        // Reduce the reserved bottom and top to allow the list to extend further toward the bottom of the viewport.
+        const reservedTop = 68;    // slightly smaller header + safe offset
+        const reservedBottom = 40; // much smaller reserve for player height + controls to allow a longer list
+        const maxListHeight = `calc(100vh - ${reservedTop + reservedBottom}px)`;
+
+        const playlistLeft = document.getElementById('playlist-left');
+        if (playlistLeft) {
+          // Keep the left column a column flex container and give it a taller height so the channel list can be longer.
+          playlistLeft.style.height = `calc(100vh - ${reservedTop + 8}px)`; // leave a minimal bottom gap
+          playlistLeft.style.display = 'flex';
+          playlistLeft.style.flexDirection = 'column';
+        }
+
+        // Constrain the scrollable channel list to the space beneath the filters/header inside the left column.
+        list.style.maxHeight = maxListHeight;
+        list.style.overflow = 'auto';
+        list.style.height = 'auto';
+      }catch(e){
+        list.style.maxHeight = '720px';
+        list.style.height = 'auto';
+        list.style.overflow = 'auto';
+      }
+    }
+
+    let resizeTimer = null;
+    function scheduleRecalc(){ clearTimeout(resizeTimer); resizeTimer = setTimeout(applyListMaxHeight, 120); }
+    window.addEventListener('resize', scheduleRecalc);
+    window.addEventListener('orientationchange', scheduleRecalc);
+    applyListMaxHeight();
+
+    // Ensure a card is vertically visible inside the playlist list container
+    function ensureChannelVisible(card){
+      if(!card || !list) return;
+      try{
+        const cardRect = card.getBoundingClientRect();
+        const listRect = list.getBoundingClientRect();
+
+        // If card is above visible top, scroll up so it's near the top with small padding
+        if(cardRect.top < listRect.top + 8){
+          const delta = (list.scrollTop + (cardRect.top - listRect.top)) - 8;
+          list.scrollTo({ top: Math.max(0, delta), behavior: 'smooth' });
+          return;
+        }
+
+        // If card is below visible bottom, scroll up just enough to bring it into view (near bottom padding)
+        if(cardRect.bottom > listRect.bottom - 8){
+          const delta = list.scrollTop + (cardRect.bottom - listRect.bottom) + 8;
+          list.scrollTo({ top: delta, behavior: 'smooth' });
+          return;
+        }
+
+        // otherwise already visible; no action
+      }catch(e){}
+    }
+
+    function buildCard(ch){
+      const card = document.createElement('div');
+      card.style.display = 'flex';
+      card.style.gap = '12px';
+      card.style.alignItems = 'center';
+      card.style.padding = '8px';
+      card.style.border = '1px solid rgba(255,255,255,0.04)';
+      card.style.borderRadius = '8px';
+      card.style.cursor = 'pointer';
+      card.setAttribute('role','button');
+      card.tabIndex = 0; // make keyboard-focusable
+      card.innerHTML = `
+        <img src="${ch.logo || ''}" onerror="this.style.display='none'" style="width:100px;height:56px;object-fit:contain;border-radius:6px;background:#000">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ch.name}</div>
+          <div style="font-size:13px;color:#9ca3af">${ch.group}</div>
+        </div>
+        <div style="color:#9ca3af;padding-left:8px">▶</div>
+      `;
+      card.addEventListener('click', async ()=>{
+        try { if(playerPlaceholder) playerPlaceholder.style.display = 'none'; } catch(e){}
+        if(vid) vid.style.display = 'block';
+
+        // Ensure the selected card is visible in the channel list (vertical scroll inside list)
+        try { ensureChannelVisible(card); } catch(e){}
+
+        // focus the card so remote/keyboard users get clear feedback
+        try { card.focus({ preventScroll: true }); } catch { try { card.focus(); } catch{} }
+
+        try{
+          if(ch.url.toLowerCase().endsWith('.m3u8') && window.Hls && Hls.isSupported()){
+            if(window._hlsInstance){ window._hlsInstance.destroy(); window._hlsInstance = null; }
+            window._hlsInstance = new Hls();
+            window._hlsInstance.loadSource(ch.url);
+            window._hlsInstance.attachMedia(vid);
+            window._hlsInstance.on(Hls.Events.MANIFEST_PARSED, ()=> vid.play().catch(()=>{}));
+          } else {
+            if(window._hlsInstance){ window._hlsInstance.destroy(); window._hlsInstance = null; }
+            vid.src = ch.url;
+            try { await vid.play(); } catch(e){}
+          }
+        }catch(err){
+          console.warn('play error', err);
+          vid.src = ch.url;
+          try { await vid.play(); } catch(e){}
+        }
+      });
+
+      // allow Enter/Space to activate the card when focused
+      card.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          card.click();
+        }
+      });
+
+      return card;
+    }
+
+    function renderList(items){
+      list.innerHTML = '';
+      if(!items || items.length === 0){
+        list.innerHTML = '<div id="playlist-empty" style="color:#9ca3af;padding:12px;text-align:center">No channels</div>';
+        return;
+      }
+      for(const c of items) list.appendChild(buildCard(c));
+      applyListMaxHeight();
+    }
+
+    renderList(channels);
+
+    filter.addEventListener('input', ()=>{
+      const q = filter.value.toLowerCase().trim();
+      if(!q) return renderList(channels);
+      renderList(channels.filter(c => (c.name||'').toLowerCase().includes(q) || (c.group||'').toLowerCase().includes(q)));
+    });
+
+    // When the user presses ArrowDown while focused in the filter, move focus to the first channel card.
+    filter.addEventListener('keydown', (ev) => {
+      if (ev.key === 'ArrowDown') {
+        ev.preventDefault();
+        // prefer explicitly generated cards with class 'card' inside the playlist list
+        let firstCard = document.querySelector('#playlist-list .card');
+        // fallbacks for other DOM shapes rendered into #playlist-list
+        if (!firstCard) firstCard = document.querySelector('#playlist-list > div[role="button"], #playlist-list > div[tabindex], #playlist-list > div');
+        if (firstCard) {
+          try {
+            if (firstCard.tabIndex === undefined || firstCard.tabIndex === -1) firstCard.tabIndex = 0;
+            // ensure it's visible inside the scrollable list before focusing
+            try { ensureChannelVisible(firstCard); } catch(e){}
+            firstCard.focus();
+          } catch (e) {
+            try { firstCard.click(); } catch (err) {}
+          }
+        }
+      }
+    });
+
+    if(!window.Hls){
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+      s.onload = ()=> console.log('Hls.js loaded');
+      s.onerror = ()=> console.warn('Hls.js failed to load');
+      document.head.appendChild(s);
+    }
+
+    // Localization map and updater (includes fullscreen labels)
+    const PLAYLIST_I18N = {
+      en: {
+        player_placeholder: 'Select a channel to start playback',
+        filter_placeholder: 'Search Channels',
+        no_channels: 'No channels',
+        channels_label_suf: 'channels',
+        back_title: 'Back',
+        open_fullscreen: 'Open in fullscreen',
+        exit_fullscreen: 'Exit fullscreen'
+      },
+      es: {
+        player_placeholder: 'Selecciona un canal para comenzar la reproducción',
+        filter_placeholder: 'Buscar canales',
+        no_channels: 'No hay canales',
+        channels_label_suf: 'canales',
+        back_title: 'Atrás',
+        open_fullscreen: 'Abrir en pantalla completa',
+        exit_fullscreen: 'Salir de pantalla completa'
+      }
+    };
+
+    function applyPlaylistLanguage(lang){
+      lang = lang || 'en';
+      const dict = PLAYLIST_I18N[lang] || PLAYLIST_I18N.en;
+      try{
+        // player placeholder
+        if(playerPlaceholderText) playerPlaceholderText.textContent = dict.player_placeholder;
+        // filter placeholder
+        if(filter) filter.placeholder = dict.filter_placeholder;
+        // empty list message (if present)
+        const emptyEl = document.getElementById('playlist-empty');
+        if(emptyEl) emptyEl.textContent = dict.no_channels;
+        // count suffix update (e.g. "12 channels" -> "12 canales")
+        if(countEl){
+          const num = channels.length || 0;
+          countEl.textContent = `${num} ${dict.channels_label_suf}`;
+        }
+        // back btn title/aria
+        if(backBtn){
+          backBtn.title = dict.back_title;
+          backBtn.setAttribute('aria-label', dict.back_title);
+        }
+        // fullscreen button label (if present)
+        if (fullscreenBtn && fullscreenBtnLabel) {
+          const isFsNow = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+          fullscreenBtnLabel.textContent = isFsNow ? dict.exit_fullscreen : dict.open_fullscreen;
+        }
+      }catch(e){ console.warn('applyPlaylistLanguage error', e); }
+    }
+
+    // apply current stored language initially and subscribe to changes
+    try{
+      const stored = localStorage.getItem('app_language') || 'en';
+      applyPlaylistLanguage(stored);
+      window.addEventListener('storage', (ev) => {
+        if(ev.key === 'app_language') applyPlaylistLanguage(ev.newValue || 'en');
+      });
+      // also respond to same-tab custom event if other parts call it
+      window.addEventListener('appLanguageChanged', (e) => { applyPlaylistLanguage(e.detail?.lang || localStorage.getItem('app_language') || 'en'); });
+      // keep fullscreen label in sync when fullscreen changes
+      document.addEventListener('fullscreenchange', () => { applyPlaylistLanguage(localStorage.getItem('app_language') || 'en'); });
+      document.addEventListener('webkitfullscreenchange', () => { applyPlaylistLanguage(localStorage.getItem('app_language') || 'en'); });
+      document.addEventListener('msfullscreenchange', () => { applyPlaylistLanguage(localStorage.getItem('app_language') || 'en'); });
+    }catch(e){}
+
+    // expose for debugging or external calls
+    window.applyPlaylistLanguage = applyPlaylistLanguage;
+  }
+
+  // Attach click handlers for every element that includes a data-m3u attribute.
+  cards.forEach(card => {
+    card.addEventListener('click', async function(ev){
+      ev.preventDefault();
+      const raw = (card.getAttribute('data-m3u') || '').trim();
+      if(!raw) return;
+
+      // Support comma-separated playlist URLs (e.g. "url1.m3u,url2.m3u")
+      const urls = raw.split(',').map(s => s.trim()).filter(Boolean);
+      const labelEl = card.querySelector('h3') || card.querySelector('h2') || card;
+      const label = labelEl ? (labelEl.textContent || 'Channels') : 'Channels';
+
+      // render an empty playlist UI immediately to avoid perceived delay
+      renderPlaylistUI([], label.trim());
+
+      try{
+        // fetch and merge all playlists
+        const merged = await (async function(urlList){
+          const all = [];
+          for(const u of urlList){
+            try{
+              const r = await fetch(u);
+              if(!r.ok) continue;
+              const txt = await r.text();
+              const parsed = parseM3uToArray(txt);
+              if(Array.isArray(parsed) && parsed.length) all.push(...parsed);
+            }catch(e){
+              console.warn('playlist fetch failed', u, e);
+              continue;
+            }
+          }
+          return all;
+        })(urls);
+
+        if(!merged || merged.length === 0){
+          renderPlaylistUI([], label.trim());
+          alert('No channels found in playlist(s).');
+          return;
+        }
+
+        // remove duplicate entries by url and name (best-effort)
+        const seen = new Set();
+        const unique = [];
+        for(const c of merged){
+          const key = `${(c.url||'').trim()}|${(c.name||'').trim()}`;
+          if(seen.has(key)) continue;
+          seen.add(key);
+          unique.push(c);
+        }
+
+        renderPlaylistUI(unique, label.trim());
+      }catch(err){
+        console.error(err);
+        renderPlaylistUI([], label.trim());
+        alert('Failed to load playlist(s).');
+      }
+    });
+  });
+})();
+</script>
+
+<script>
+  (function(){
+    const TRANSLATIONS = {
+      es: {
+        title: 'Vidlo - IPTV Categorías',
+        browse_by_region: 'Explorar por Región',
+        american_channels: 'Canales Americanos',
+        european_channels: 'Canales Europeos',
+        asian_channels: 'Canales Asiáticos',
+        african_channels: 'Canales Africanos',
+        oceania_channels: 'Canales de Oceanía',
+        german_channels: 'Canales Alemanes',
+        french_channels: 'Canales Franceses',
+        uk_channels: 'Canales del Reino Unido',
+        canadian_channels: 'Canales Canadienses',
+        spanish_channels: 'Canales Españoles',
+        italian_channels: 'Canales Italianos',
+        brazilian_channels: 'Canales Brasileños',
+        usa_channels: 'Canales USA',
+        // new category translations
+        sport_tv_channels: 'Canales Deportivos',
+        kids_channels: 'Canales Infantiles',
+        news_channels: 'Canales de Noticias',
+        glotovpa_tv_channels: 'Canales Glotovpa TV',
+        tubi_tv_channels: 'Canales Tubi TV',
+        plex_tv_channels: 'Canales Plex TV',
+        back_title: 'Atrás',
+        search_placeholder: 'Buscar...'
+      },
+      en: {} // identity fallback
+    };
+
+    function applyLiveTvLanguage(lang){
+      try{
+        lang = lang || 'en';
+        const map = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
+        // document title
+        if(map.title) document.title = map.title;
+
+        // main heading
+        const mainH2 = document.querySelector('main h2.text-headline-md');
+        if(mainH2){
+          if(!mainH2.dataset.original) mainH2.dataset.original = mainH2.textContent.trim();
+          mainH2.textContent = map.browse_by_region || mainH2.dataset.original;
+        }
+
+        // back button tooltip/title
+        const backBtn = document.querySelector('button[aria-label="Back"], button[title="Back"]');
+        if(backBtn){
+          const original = backBtn.getAttribute('aria-label') || backBtn.title || 'Back';
+          if(!backBtn.dataset.original) backBtn.dataset.original = original;
+          const title = map.back_title || backBtn.dataset.original;
+          backBtn.title = title;
+          backBtn.setAttribute('aria-label', title);
+        }
+
+        // Card titles mapping by matching English defaults to translation keys
+        const cardMap = {
+          'American Channels': map.american_channels,
+          'European Channels': map.european_channels,
+          'Asian Channels': map.asian_channels,
+          'African Channels': map.african_channels,
+          'Oceania Channels': map.oceania_channels,
+          'German Channels': map.german_channels,
+          'French Channels': map.french_channels,
+          'UK Channels': map.uk_channels,
+          'Canadian Channels': map.canadian_channels,
+          'Spanish Channels': map.spanish_channels,
+          'Italian Channels': map.italian_channels,
+          'Brazilian Channels': map.brazilian_channels,
+          'USA Channels': map.usa_channels,
+          // new category mappings (exact English labels used in the card titles)
+          'Sport TV Channels': map.sport_tv_channels || 'Sport TV Channels',
+          'Kids Channels': map.kids_channels || 'Kids Channels',
+          'News Channels': map.news_channels || 'News Channels',
+          'Glotovpa TV Channels': map.glotovpa_tv_channels || 'Glotovpa TV Channels',
+          'Tubi TV Channels': map.tubi_tv_channels || 'Tubi TV Channels',
+          'Plex TV Channels': map.plex_tv_channels || 'Plex TV Channels'
+        };
+
+        document.querySelectorAll('a h3, a .text-headline-md').forEach(el => {
+          try {
+            const txt = el.textContent.trim();
+            if(!el.dataset.original) el.dataset.original = txt;
+            const mapped = cardMap[el.dataset.original] || cardMap[txt];
+            if(mapped) el.textContent = mapped;
+            else {
+              // if switching back to English, restore original
+              if(lang === 'en' && el.dataset.original) el.textContent = el.dataset.original;
+            }
+          } catch(e){}
+        });
+
+        // also ensure any other headings inside cards without exact match are restored if switching to English
+        if(lang === 'en'){
+          document.querySelectorAll('a h3').forEach(el => {
+            if(el.dataset.original) el.textContent = el.dataset.original;
+          });
+        }
+
+        // apply placeholder translations for any inputs (search/filter)
+        document.querySelectorAll('input, textarea').forEach(inp => {
+          try{
+            if(!inp.dataset.originalPlaceholder) inp.dataset.originalPlaceholder = inp.placeholder || '';
+            if(map.search_placeholder && (inp.placeholder && inp.placeholder.toLowerCase().includes('search') || inp.id === 'playlist-filter' || inp.id === 'filter' || inp.id === 'playlist-filter')) {
+              inp.placeholder = map.search_placeholder;
+            } else if(lang === 'en' && inp.dataset.originalPlaceholder){
+              inp.placeholder = inp.dataset.originalPlaceholder;
+            }
+          }catch(e){}
+        });
+
+        // dispatch event for other scripts
+        window.dispatchEvent(new CustomEvent('liveTvLanguageApplied', { detail: { lang } }));
+      }catch(e){
+        console.warn('applyLiveTvLanguage error', e);
+      }
+    }
+
+    // Apply on load using stored language
+    try {
+      const initial = localStorage.getItem('app_language') || 'en';
+      applyLiveTvLanguage(initial);
+    } catch(e){}
+
+    // React to storage changes from other tabs or the settings panel
+    window.addEventListener('storage', (ev) => {
+      if(ev.key === 'app_language'){
+        applyLiveTvLanguage(ev.newValue || 'en');
+      }
+    });
+
+    // Expose API for same-tab calls
+    window.applyLiveTvLanguage = applyLiveTvLanguage;
+  })();
+</script>
+
+<script>
+  // Toggle the "All Channels" card title between Spanish and the original text based on app_language
+  (function(){
+    function updateAllChannelsLabel(lang){
+      try{
+        const el = document.querySelector('#all-channels-link h3');
+        if(!el) return;
+        if(!el.dataset.originalText) el.dataset.originalText = el.textContent.trim();
+        if(String(lang) === 'es'){
+          el.textContent = 'Todos los canales';
+        } else {
+          el.textContent = el.dataset.originalText || 'All Channels';
+        }
+      }catch(e){}
+    }
+
+    try{
+      // apply immediately from stored setting
+      const stored = localStorage.getItem('app_language') || 'en';
+      updateAllChannelsLabel(stored);
+      // listen for changes from other tabs / settings panel
+      window.addEventListener('storage', (ev) => {
+        if(ev.key === 'app_language') updateAllChannelsLabel(ev.newValue || 'en');
+      });
+      // also listen for same-tab custom event used elsewhere in the app
+      window.addEventListener('appLanguageChanged', (ev) => {
+        updateAllChannelsLabel(ev.detail?.lang || localStorage.getItem('app_language') || 'en');
+      });
+    }catch(e){}
+  })();
+</script>
+
+<script>
+  // Ensure all category cards become focusable targets for TV spatial navigation.
+  // This marks any anchor that drives a playlist (data-m3u) as a TV-focusable control
+  // so tv-spatial-nav.js can include them in its candidate set.
+  (function markLiveTvCardsForSpatialNav(){
+    try {
+      document.querySelectorAll('a[data-m3u]').forEach(a => {
+        // mark as tv-focusable and ensure it is keyboard-focusable
+        a.setAttribute('data-tv-focus', 'true');
+        if (!a.hasAttribute('tabindex')) a.setAttribute('tabindex', '0');
+        // give a clear role for accessibility if not already present
+        if (!a.getAttribute('role')) a.setAttribute('role', 'button');
+      });
+      // dispatch an event so tv-spatial-nav (if already loaded) can re-evaluate focusable elements
+      window.dispatchEvent(new CustomEvent('tvSpatialMarked'));
+    } catch (e) {
+      console.warn('markLiveTvCardsForSpatialNav failed', e);
+    }
+  })();
+</script>
+<script src="/tv-spatial-nav.js"></script>
+</body></html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
